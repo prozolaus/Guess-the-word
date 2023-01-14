@@ -1,0 +1,6 @@
+*.sln
+*.vcxproj*
+Balda/
+Slovnyk(proby)/
+x64/
+.vs/
