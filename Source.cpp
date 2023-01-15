@@ -15,6 +15,7 @@ class MyLetterSprite : public sf::Sprite
 
 public:
 	char letter;
+	bool isHidden = false;
 	sf::Vector2i startpos;
 	MyRectangleShape* rec = nullptr;
 	void setStartPosition(int x, int y) { startpos.x = x; startpos.y = y; setStartPosition(); }
@@ -29,14 +30,14 @@ public:
 	std::vector<sf::Texture> textures, result_textures;
 	std::vector<MyLetterSprite> sprites, result_sprites, result_sprites2;
 	std::vector<MyRectangleShape> rectangles;
-	bool isMove = false;
+	bool isMove = false, isHide = false;
 	float dX = 0;
 	float dY = 0;
 	MyLetterSprite* myspr = nullptr;
 	Dictionary dictionary;
 	string word;
 	sf::RectangleShape resultrect1, resultrect2;
-	sf::Text result_text;
+	sf::Text result_text, win_text;
 	sf::Font font;
 
 	Game(Letters);
@@ -98,6 +99,11 @@ Game::Game(Letters lttrs)
 	result_text.setFillColor(sf::Color::Blue);
 	result_text.move(20, 560);
 	result_text.setString("Result:");
+	win_text.setFont(font);
+	win_text.setFillColor(sf::Color::Magenta);
+	win_text.move(300, 550);
+	win_text.setString("Congratulations!");
+	win_text.setCharacterSize(40);
 }
 
 void Game::letter_init()
@@ -142,6 +148,7 @@ void check_event(sf::RenderWindow& window, sf::Event& event, Game& game, sf::Vec
 			window.close();
 
 		if (event.type == sf::Event::MouseButtonPressed)
+		{
 			if (event.key.code == sf::Mouse::Left)
 				for (int i = 0; i < game.sprites.size(); i++)
 					if (game.sprites[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y))
@@ -152,13 +159,25 @@ void check_event(sf::RenderWindow& window, sf::Event& event, Game& game, sf::Vec
 						game.myspr = &game.sprites[i];
 						break;
 					}
+			if (event.key.code == sf::Mouse::Right)
+				for (int i = 0; i < game.sprites.size(); i++)
+					if (game.sprites[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+					{
+						game.isHide = true;
+						game.dX = pixelPos.x - game.sprites[i].getPosition().x;
+						game.dY = pixelPos.y - game.sprites[i].getPosition().y;
+						game.myspr = &game.sprites[i];
+						break;
+					}
+		}
 
 		if (event.type == sf::Event::MouseButtonReleased)
 			if (event.key.code == sf::Mouse::Left && game.isMove)
 			{
 				game.isMove = false;
 				game.myspr->setColor(sf::Color::White);
-
+				if (game.myspr->isHidden)
+					game.myspr->setColor(sf::Color{ 255,255,255,20 });
 				int i = 0;
 				for (; i < game.rectangles.size(); i++)
 					if (game.rectangles[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y) && !game.rectangles[i].isfull)
@@ -184,7 +203,15 @@ void check_event(sf::RenderWindow& window, sf::Event& event, Game& game, sf::Vec
 			game.myspr->setColor(sf::Color::Green);
 			game.myspr->setPosition(pixelPos.x - game.dX, pixelPos.y - game.dY);
 		}
-
+		if (game.isHide)
+		{
+			(game.myspr->getColor() == sf::Color::White) ? game.myspr->setColor(sf::Color{255,255,255,20}) : game.myspr->setColor(sf::Color::White);
+			game.myspr->isHidden ? game.myspr->isHidden = false : game.myspr->isHidden = true;
+			game.myspr->setStartPosition();
+			if (game.myspr->rec && game.myspr->rec->isfull)
+				game.myspr->rec->isfull = false;
+			game.isHide = false;
+		}
 	}
 }
 
@@ -212,6 +239,8 @@ void start(sf::RenderWindow& window, Game& game)
 			pair<int, int> result = game.dictionary.get_result(game.word);
 			game.result_sprites[result.first].setPosition(game.resultrect1.getPosition());
 			game.result_sprites2[result.second].setPosition(game.resultrect2.getPosition());
+			if (result.first == int(game.letters) && result.second == int(game.letters))
+				window.draw(game.win_text);
 		}
 		else
 			for (int i = 0; i < game.result_sprites.size(); i++)
@@ -230,7 +259,7 @@ void start(sf::RenderWindow& window, Game& game)
 		}
 
 		window.draw(game.result_text);
-
+		
 		window.display();
 	}
 }
@@ -265,8 +294,6 @@ try
 	Dictionary d12{ Language::UKR, Letters::FOUR, Level::ERUDITE };
 	*/
 	
-	SetConsoleCP(1251);
-	SetConsoleOutputCP(1251);
 
 	sf::RenderWindow window(sf::VideoMode(700, 700), "Guess the word");
 	Game game(Letters::THREE);
