@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <Windows.h>
@@ -8,8 +7,6 @@
 #include <chrono>
 #include <random> 
 #include "functions.h"
-
-using namespace std;
 
 enum class Language
 {

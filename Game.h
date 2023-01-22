@@ -5,28 +5,41 @@
 class MyRectangleShape : public sf::RectangleShape
 {
 	using RectangleShape::RectangleShape;
+	bool filling = false;
 
 public:
-	bool isfull = false;
+	void setFilling(bool f) { filling = f; }
+	bool getFilling() const { return filling; }
 };
 
 class MyLetterSprite : public sf::Sprite
 {
 	using Sprite::Sprite;
+	char letter;
+	bool hiding = false;
+	MyRectangleShape* rec = nullptr;
+	sf::Vector2i startpos;
 
 public:
-	char letter;
-	bool isHidden = false;
-	sf::Vector2i startpos;
-	MyRectangleShape* rec = nullptr;
-	void setStartPosition(int x, int y) { startpos.x = x; startpos.y = y; setStartPosition(); }
+	void setLetter(char l) { letter = l; }
+	char getLetter() const { return letter; }
+	void setLetterHiding(bool lh) { hiding = lh; }
+	bool getLetterHiding() const { return hiding; }
+	void connectRectangle(MyRectangleShape* myrecshape) { rec = myrecshape; }
+	MyRectangleShape* getConnectedRectangle() const { return rec; }
+	void setStartCoords(int x, int y) { startpos.x = x; startpos.y = y; setStartPosition(); }
 	void setStartPosition() { setPosition(startpos.x, startpos.y); }
 };
 
 class Game
 {
-	const int alphabet_size = 33;
+	const int alphabet_size;
+	Dictionary dictionary;
+	Language language;
 	Letters letters;
+	bool motion, hiding;
+	float dX, dY;
+	string word;
 	void setGame();
 
 public:
@@ -34,19 +47,24 @@ public:
 	std::vector<sf::Texture> textures, result_textures;
 	std::vector<MyLetterSprite> sprites, result_sprites, result_sprites2;
 	std::vector<MyRectangleShape> rectangles;
-	bool isMove = false, isHide = false;
-	float dX = 0;
-	float dY = 0;
+
 	MyLetterSprite* myspr = nullptr;
-	Dictionary dictionary;
 	sf::RectangleShape resultrect1, resultrect2;
 	sf::Text result_text, win_text, menu_text;
 	sf::Font font;
-	string word;
 
 	Game(MenuSettings);
+	void setMotion(bool m) { motion = m; }
+	void setHiding(bool h) { hiding = h; }
+	bool getMotion() const { return motion; }
+	bool getHiding() const { return hiding; }
+	void setdX(float dx) { dX = dx; }
+	void setdY(float dy) { dY = dy; }
+	float getdX() const { return dX; }
+	float getdY() const { return dY; }
+	void setLetterInWord(int i, char l) { word.at(i) = l; }
 	void letterInit();
-	bool rectanglesFull();
+	bool allRectanglesFull();
 	int wordSize() { return int(letters); }
 	pair<int, int> getResult() { return dictionary.get_result(word); }
 };

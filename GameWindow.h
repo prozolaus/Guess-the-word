@@ -4,8 +4,8 @@
 class GameWindow : public sf::RenderWindow
 {
 	using sf::RenderWindow::RenderWindow;
-	bool check_event(sf::Event& event, Game& game, sf::Vector2i& pixelPos);
 	MenuSettings menu();
+	bool check_event(sf::Event&, Game&, sf::Vector2i&);
 	void play(Game&);
 
 public:

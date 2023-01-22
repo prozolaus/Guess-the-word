@@ -176,9 +176,9 @@ bool GameWindow::check_event(sf::Event& event, Game& game, sf::Vector2i& pixelPo
 				else for (int i = 0; i < game.sprites.size(); i++)
 					if (game.sprites[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 					{
-						game.isMove = true;
-						game.dX = pixelPos.x - game.sprites[i].getPosition().x;
-						game.dY = pixelPos.y - game.sprites[i].getPosition().y;
+						game.setMotion(true);
+						game.setdX(pixelPos.x - game.sprites[i].getPosition().x);
+						game.setdY(pixelPos.y - game.sprites[i].getPosition().y);
 						game.myspr = &game.sprites[i];
 						break;
 					}
@@ -186,58 +186,58 @@ bool GameWindow::check_event(sf::Event& event, Game& game, sf::Vector2i& pixelPo
 				for (int i = 0; i < game.sprites.size(); i++)
 					if (game.sprites[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 					{
-						game.isHide = true;
-						game.dX = pixelPos.x - game.sprites[i].getPosition().x;
-						game.dY = pixelPos.y - game.sprites[i].getPosition().y;
+						game.setHiding(true);
+						game.setdX(pixelPos.x - game.sprites[i].getPosition().x);
+						game.setdY(pixelPos.y - game.sprites[i].getPosition().y);
 						game.myspr = &game.sprites[i];
 						break;
 					}
 		}
 
 		if (event.type == sf::Event::MouseButtonReleased)
-			if (event.key.code == sf::Mouse::Left && game.isMove)
+			if (event.key.code == sf::Mouse::Left && game.getMotion())
 			{
-				game.isMove = false;
+				game.setMotion(false);
 				game.myspr->setColor(sf::Color::White);
-				if (game.myspr->isHidden)
+				if (game.myspr->getLetterHiding())
 					game.myspr->setColor(sf::Color{ 255,255,255,20 });
 				int i = 0;
 				for (; i < game.rectangles.size(); i++)
-					if (game.rectangles[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y) && !game.rectangles[i].isfull)
+					if (game.rectangles[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y) && !game.rectangles[i].getFilling())
 					{
-						if (game.myspr->rec)
-							game.myspr->rec->isfull = false;
+						if (game.myspr->getConnectedRectangle())
+							game.myspr->getConnectedRectangle()->setFilling(false);
 						game.myspr->setPosition(game.rectangles[i].getPosition().x, game.rectangles[i].getPosition().y);
-						game.myspr->rec = &game.rectangles[i];
-						game.rectangles[i].isfull = true;
-						game.word[i] = game.myspr->letter;
+						game.myspr->connectRectangle(&game.rectangles[i]);
+						game.rectangles[i].setFilling(true);
+						game.setLetterInWord(i, game.myspr->getLetter());
 						break;
 					}
 				if (i == game.rectangles.size())
 				{
 					game.myspr->setStartPosition();
-					if (game.myspr->rec)
-						game.myspr->rec->isfull = false;
-					game.myspr->rec = nullptr;
+					if (game.myspr->getConnectedRectangle())
+						game.myspr->getConnectedRectangle()->setFilling(false);
+					game.myspr->connectRectangle(nullptr);
 				}
 			}
 		game.menu_text.setFillColor(sf::Color::Black);
 		if (game.menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 			game.menu_text.setFillColor(sf::Color::Blue);
-		if (game.isMove)
+		if (game.getMotion())
 		{
 			game.myspr->setColor(sf::Color::Green);
-			game.myspr->setPosition(pixelPos.x - game.dX, pixelPos.y - game.dY);
+			game.myspr->setPosition(pixelPos.x - game.getdX(), pixelPos.y - game.getdY());
 		}
-		if (game.isHide)
+		if (game.getHiding())
 		{
 			(game.myspr->getColor() == sf::Color::White) ? game.myspr->setColor(sf::Color{ 255,255,255,20 }) : game.myspr->setColor(sf::Color::White);
-			game.myspr->isHidden ? game.myspr->isHidden = false : game.myspr->isHidden = true;
+			game.myspr->getLetterHiding() ? game.myspr->setLetterHiding(false) : game.myspr->setLetterHiding(true);
 			game.myspr->setStartPosition();
-			if (game.myspr->rec)
-				game.myspr->rec->isfull = false;
-			game.myspr->rec = nullptr;
-			game.isHide = false;
+			if (game.myspr->getConnectedRectangle())
+				game.myspr->getConnectedRectangle()->setFilling(false);
+			game.myspr->connectRectangle(nullptr);
+			game.setHiding(false);
 		}
 	}
 	return true;
@@ -263,7 +263,7 @@ void GameWindow::play(Game& game)
 		for (int i = game.sprites.size() - 1; i >= 0; i--)
 			draw(game.sprites[i]);
 
-		if (game.rectanglesFull())
+		if (game.allRectanglesFull())
 		{
 			pair<int, int> result = game.getResult();
 			game.result_sprites[result.first].setPosition(game.resultrect1.getPosition());

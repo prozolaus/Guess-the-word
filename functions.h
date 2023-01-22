@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+
 using namespace std;
 
 pair<int, int> get_result_for_4_letters(const string& computer_word, const string& player_word);
