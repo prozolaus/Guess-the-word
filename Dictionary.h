@@ -30,6 +30,14 @@ enum class Level
 	ERUDITE
 };
 
+struct MenuSettings
+{
+	Language language;
+	Letters letters;
+	Level level;
+	MenuSettings() : language{ Language::UKR }, letters{ Letters::THREE }, level{ Level::SCHOOL } {}
+};
+
 class Dictionary
 {
 	unordered_map<string, string> current_dict, second_dict, third_dict, combined_dict;
