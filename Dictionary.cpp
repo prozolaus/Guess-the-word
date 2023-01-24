@@ -126,3 +126,8 @@ pair<int, int> Dictionary::get_result(const string& pword)
 		throw runtime_error("Dictionary::get_result(pword): Wrong pword.size()!");
 	return (letters == Letters::THREE ? get_result_for_3_letters(hidden_word, pword) : get_result_for_4_letters(hidden_word, pword));
 }
+
+bool Dictionary::is_wrong_word(const string& word)
+{
+	return (combined_dict.find(word) != combined_dict.end()) ? false : true;
+}

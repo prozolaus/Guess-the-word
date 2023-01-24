@@ -220,6 +220,18 @@ bool GameWindow::check_event(sf::Event& event, Game& game, sf::Vector2i& pixelPo
 						game.myspr->getConnectedRectangle()->setFilling(false);
 					game.myspr->connectRectangle(nullptr);
 				}
+				if (game.allRectanglesFull() && !game.isWrongWord())
+				{
+					pair<int, int> result = game.getResult();
+					game.result_sprites[result.first].setPosition(game.resultrect1.getPosition());
+					game.result_sprites2[result.second].setPosition(game.resultrect2.getPosition());
+					string s{ game.word + " - " + to_string(result.first) + ":" + to_string(result.second) };
+					game.history.push_back(sf::Text{ wstring(CA2W(s.c_str())),game.font, 18 });
+					game.history.back().setPosition(500, game.history.size() * 20);
+					game.history.back().setFillColor(sf::Color::Blue);
+					if (result.first == game.wordSize() && result.second == game.wordSize())
+						game.win_text.setFillColor(sf::Color::Magenta);
+				}
 			}
 		game.menu_text.setFillColor(sf::Color::Black);
 		if (game.menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
@@ -263,20 +275,13 @@ void GameWindow::play(Game& game)
 		for (int i = game.sprites.size() - 1; i >= 0; i--)
 			draw(game.sprites[i]);
 
-		if (game.allRectanglesFull())
-		{
-			pair<int, int> result = game.getResult();
-			game.result_sprites[result.first].setPosition(game.resultrect1.getPosition());
-			game.result_sprites2[result.second].setPosition(game.resultrect2.getPosition());
-			if (result.first == game.wordSize() && result.second == game.wordSize())
-				draw(game.win_text);
-		}
-		else
+		if (!game.allRectanglesFull())
 			for (int i = 0; i < game.result_sprites.size(); i++)
 			{
 				game.result_sprites[i].setStartPosition();
 				game.result_sprites2[i].setStartPosition();
 			}
+
 
 		draw(game.resultrect1);
 		draw(game.resultrect2);
@@ -287,8 +292,13 @@ void GameWindow::play(Game& game)
 			draw(game.result_sprites2[i]);
 		}
 
+		for (int i = 0; i < game.history.size(); i++)
+			draw(game.history[i]);
+
 		draw(game.result_text);
 		draw(game.menu_text);
+		draw(game.win_text);
+		draw(game.wrong_word_text);
 
 		display();
 	}

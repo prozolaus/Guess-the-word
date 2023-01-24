@@ -58,4 +58,5 @@ public:
 	void print_words(ostream& os);
 	string hword_explanation();
 	pair<int, int> get_result(const string&);
+	bool is_wrong_word(const string&);
 };

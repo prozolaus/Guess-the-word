@@ -1,6 +1,8 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Dictionary.h"
+#include <atlbase.h>
+#include <atlconv.h>
 
 class MyRectangleShape : public sf::RectangleShape
 {
@@ -39,7 +41,7 @@ class Game
 	Letters letters;
 	bool motion, hiding;
 	float dX, dY;
-	string word;
+	sf::Color bgcolor;
 	void setGame();
 
 public:
@@ -50,8 +52,10 @@ public:
 
 	MyLetterSprite* myspr = nullptr;
 	sf::RectangleShape resultrect1, resultrect2;
-	sf::Text result_text, win_text, menu_text;
+	sf::Text result_text, win_text, menu_text, wrong_word_text;
+	vector<sf::Text> history;
 	sf::Font font;
+	string word;
 
 	Game(MenuSettings);
 	void setMotion(bool m) { motion = m; }
@@ -65,6 +69,7 @@ public:
 	void setLetterInWord(int i, char l) { word.at(i) = l; }
 	void letterInit();
 	bool allRectanglesFull();
+	bool isWrongWord();
 	int wordSize() { return int(letters); }
 	pair<int, int> getResult() { return dictionary.get_result(word); }
 };

@@ -8,7 +8,8 @@ Game::Game(MenuSettings ms)
 	motion{ false }, hiding{ false },
 	dX{ 0 }, dY{ 0 },
 	textures{ alphabet_size },
-	result_textures{ wordSize() + 1 }
+	result_textures{ wordSize() + 1 },
+	bgcolor{sf::Color::White}
 {
 	setGame();
 }
@@ -64,7 +65,7 @@ void Game::setGame()
 	result_text.move(20, 560);
 	result_text.setString("Result:");
 	win_text.setFont(font);
-	win_text.setFillColor(sf::Color::Magenta);
+	win_text.setFillColor(bgcolor);
 	win_text.move(300, 550);
 	win_text.setString("Congratulations!");
 	win_text.setCharacterSize(40);
@@ -72,6 +73,21 @@ void Game::setGame()
 	menu_text.setFillColor(sf::Color::Black);
 	menu_text.move(620, 20);
 	menu_text.setString("Menu");
+	wrong_word_text.setFont(font);
+	wrong_word_text.setFillColor(bgcolor);
+	wrong_word_text.move(20, 650);
+	wrong_word_text.setString("There is no such word in the database!");
+}
+
+bool Game::isWrongWord()
+{
+	if (dictionary.is_wrong_word(word))
+	{
+		wrong_word_text.setFillColor(sf::Color::Red);
+		return true;
+	}
+	wrong_word_text.setFillColor(bgcolor);
+	return false;
 }
 
 void Game::letterInit()
