@@ -122,6 +122,12 @@ bool GameWindow::check_event(sf::Event& event, Game& game, sf::Vector2i& pixelPo
 			game.myspr->connectRectangle(nullptr);
 			game.setHiding(false);
 		}
+		if (!game.allRectanglesFull())
+			for (int i = 0; i < game.result_sprites.size(); i++)
+			{
+				game.result_sprites[i].setStartPosition();
+				game.result_sprites2[i].setStartPosition();
+			}
 	}
 	return true;
 }
@@ -139,38 +145,7 @@ void GameWindow::play(Game& game)
 		isGame = check_event(event, game, pixelPos);
 
 		clear(sf::Color::White);
-
-		for (int i = 0; i < game.rectangles.size(); i++)
-			draw(game.rectangles[i]);
-
-		for (int i = game.sprites.size() - 1; i >= 0; i--)
-			draw(game.sprites[i]);
-
-		if (!game.allRectanglesFull())
-			for (int i = 0; i < game.result_sprites.size(); i++)
-			{
-				game.result_sprites[i].setStartPosition();
-				game.result_sprites2[i].setStartPosition();
-			}
-
-
-		draw(game.resultrect1);
-		draw(game.resultrect2);
-
-		for (int i = 0; i < game.result_sprites.size(); i++)
-		{
-			draw(game.result_sprites[i]);
-			draw(game.result_sprites2[i]);
-		}
-
-		for (int i = 0; i < game.history.size(); i++)
-			draw(game.history[i]);
-
-		draw(game.result_text);
-		draw(game.menu_text);
-		draw(game.win_text);
-		draw(game.wrong_word_text);
-
+		game.drawAll(*this);
 		display();
 	}
 }

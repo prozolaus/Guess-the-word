@@ -16,6 +16,7 @@ Game::Game(MenuSettings ms)
 
 void Game::setGame()
 {
+	word.resize(wordSize());
 	for (int i = 0; i < alphabet_size; i++)
 	{
 		string lng = language == Language::UKR ? "ukr\\" : "rus\\";
@@ -31,10 +32,10 @@ void Game::setGame()
 			sprites.back().setStartCoords(j * 64, i * 64);
 		}
 	rectangles.assign(wordSize(), MyRectangleShape{ sf::Vector2f(64.f, 64.f) });
-	for (int i = 0; i < rectangles.size(); i++)
+	for (int i = 0, xr = letters == Letters::THREE ? 150 : 118; i < rectangles.size(); i++)
 	{
 		rectangles[i].setFillColor(sf::Color(175, 180, 240));
-		rectangles[i].move(100 + i * 64, 450);
+		rectangles[i].move(xr + i * 64, 450);
 		rectangles[i].setOutlineColor(sf::Color::Black);
 		rectangles[i].setOutlineThickness(1.f);
 	}
@@ -47,36 +48,46 @@ void Game::setGame()
 		result_sprites2.push_back(MyLetterSprite{ result_textures[i] });
 		result_sprites2.back().setStartCoords(-100, i * 64);
 	}
-	resultrect1 = sf::RectangleShape{ sf::Vector2f(64.f, 64.f) };
-	resultrect2 = sf::RectangleShape{ sf::Vector2f(64.f, 64.f) };
-	resultrect1.move(116.f, 550.f);
-	resultrect1.setFillColor(sf::Color::Yellow);
-	resultrect1.setOutlineColor(sf::Color::Black);
-	resultrect1.setOutlineThickness(1.f);
-	resultrect2.move(212.f, 550.f);
-	resultrect2.setFillColor(sf::Color::Yellow);
-	resultrect2.setOutlineColor(sf::Color::Black);
-	resultrect2.setOutlineThickness(1.f);
-	word.resize(wordSize());
+	setResultRect(resultrect1, 166.f);
+	setResultRect(resultrect2, 262.f);
+	setText();
 	letterInit();
-	font.loadFromFile("Bebas_Neue_Cyrillic.ttf");
+}
+
+void Game::setResultRect(sf::RectangleShape& rect, float x)
+{
+	rect = sf::RectangleShape{ sf::Vector2f(64.f, 64.f) };
+	rect.move(x, 550.f);
+	rect.setFillColor(sf::Color::Yellow);
+	rect.setOutlineColor(sf::Color::Black);
+	rect.setOutlineThickness(1.f);
+}
+
+void Game::setText()
+{
+	string fontname = "Bebas_Neue_Cyrillic.ttf";
+	if (!font.loadFromFile(fontname))
+		throw runtime_error("Game::setGame(): cannot open a font file " + fontname);
+
+	wstring congrats = language == Language::UKR ? L"Перемога!" : L"Победа!";
+	wstring wrword = language == Language::UKR ? L"Такого слова немає в базі даних гри!" : L"Такого слова нет в базе данных игры!";
 	result_text.setFont(font);
 	result_text.setFillColor(sf::Color::Blue);
-	result_text.move(20, 560);
-	result_text.setString("Result:");
+	result_text.move(20, 565);
+	result_text.setString(L"Результат:");
 	win_text.setFont(font);
 	win_text.setFillColor(bgcolor);
-	win_text.move(300, 550);
-	win_text.setString("Congratulations!");
+	win_text.move(350, 555);
+	win_text.setString(congrats);
 	win_text.setCharacterSize(40);
 	menu_text.setFont(font);
 	menu_text.setFillColor(sf::Color::Black);
 	menu_text.move(620, 20);
-	menu_text.setString("Menu");
+	menu_text.setString(L"Меню");
 	wrong_word_text.setFont(font);
 	wrong_word_text.setFillColor(bgcolor);
 	wrong_word_text.move(20, 650);
-	wrong_word_text.setString("There is no such word in the database!");
+	wrong_word_text.setString(wrword);
 }
 
 bool Game::isWrongWord()
@@ -130,3 +141,30 @@ bool Game::allRectanglesFull()
 			return false;
 	return true;
 }
+
+void Game::drawAll(sf::RenderWindow& window)
+{
+	for (int i = 0; i < rectangles.size(); i++)
+		window.draw(rectangles[i]);
+
+	for (int i = sprites.size() - 1; i >= 0; i--)
+		window.draw(sprites[i]);
+
+	window.draw(resultrect1);
+	window.draw(resultrect2);
+
+	for (int i = 0; i < result_sprites.size(); i++)
+	{
+		window.draw(result_sprites[i]);
+		window.draw(result_sprites2[i]);
+	}
+
+	for (int i = 0; i < history.size(); i++)
+		window.draw(history[i]);
+
+	window.draw(result_text);
+	window.draw(menu_text);
+	window.draw(win_text);
+	window.draw(wrong_word_text);
+}
+

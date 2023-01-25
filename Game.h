@@ -41,6 +41,8 @@ class Game
 	float dX, dY;
 	sf::Color bgcolor;
 	void setGame();
+	void setText();
+	void setResultRect(sf::RectangleShape& rect, float x);
 
 public:
 
@@ -70,4 +72,5 @@ public:
 	bool isWrongWord();
 	int wordSize() { return int(letters); }
 	pair<int, int> getResult() { return dictionary.get_result(word); }
+	void drawAll(sf::RenderWindow& window);
 };
