@@ -1,8 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Dictionary.h"
-#include <atlbase.h>
-#include <atlconv.h>
 
 class MyRectangleShape : public sf::RectangleShape
 {

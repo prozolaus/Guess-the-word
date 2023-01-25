@@ -1,5 +1,5 @@
 #pragma once
-#include "Game.h"
+#include "Menu.h"
 
 class GameWindow : public sf::RenderWindow
 {
@@ -11,3 +11,5 @@ class GameWindow : public sf::RenderWindow
 public:
 	void runGame();
 };
+
+//-----------------------------------------------------------------------------
