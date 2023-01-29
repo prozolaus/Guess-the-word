@@ -40,23 +40,21 @@ class Game
 	bool motion, hiding;
 	float dX, dY;
 	sf::Color bgcolor;
+	std::vector<sf::Texture> textures, result_textures;
+	std::vector<MyLetterSprite> sprites, result_sprites, result_sprites2;
+	std::vector<MyRectangleShape> rectangles;
+	MyLetterSprite* myspr = nullptr;
+	sf::RectangleShape resultrect1, resultrect2;
+	sf::Text result_text, win_text, menu_text, wrong_word_text, word_expl_text;
+	vector<sf::Text> history;
+	sf::Font font;
+	string word;
+
 	void setGame();
 	void setText();
 	void setResultRect(sf::RectangleShape& rect, float x);
 
 public:
-
-	std::vector<sf::Texture> textures, result_textures;
-	std::vector<MyLetterSprite> sprites, result_sprites, result_sprites2;
-	std::vector<MyRectangleShape> rectangles;
-
-	MyLetterSprite* myspr = nullptr;
-	sf::RectangleShape resultrect1, resultrect2;
-	sf::Text result_text, win_text, menu_text, wrong_word_text;
-	vector<sf::Text> history;
-	sf::Font font;
-	string word;
-
 	Game(MenuSettings);
 	void setMotion(bool m) { motion = m; }
 	void setHiding(bool h) { hiding = h; }
@@ -66,11 +64,25 @@ public:
 	void setdY(float dy) { dY = dy; }
 	float getdX() const { return dX; }
 	float getdY() const { return dY; }
+	sf::Color getBgColor() const { return bgcolor; }
+	Language getLanguage() const { return language; }
+	int wordSize() { return int(letters); }
 	void setLetterInWord(int i, char l) { word.at(i) = l; }
 	void letterInit();
 	bool allRectanglesFull();
 	bool isWrongWord();
-	int wordSize() { return int(letters); }
-	pair<int, int> getResult() { return dictionary.get_result(word); }
 	void drawAll(sf::RenderWindow& window);
+	bool isAnySpriteContain(int, int);
+	bool isAnySpriteinRect(int, int);
+	void resetCurrentSprite();
+	void moveSprite(int x, int y);
+	void setSpriteHidingOptions();
+	void resetResultSprites();
+	void setMenuTextColor(sf::Color c) { menu_text.setFillColor(c); }
+	bool isMenuTextContain(int x, int y) { return menu_text.getGlobalBounds().contains(x, y); }
+	void setExplTextColor(sf::Color c) { word_expl_text.setFillColor(c); }
+	bool isExplTextContain(int x, int y) { return word_expl_text.getGlobalBounds().contains(x, y); }
+	void setWrongWordTextColor(sf::Color c) { wrong_word_text.setFillColor(c); }
+	void resultHandling();
+	wstring getWordExplanation() { return filesystem::path(dictionary.word_explanation(word)).wstring(); }
 };

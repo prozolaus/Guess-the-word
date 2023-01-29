@@ -56,7 +56,7 @@ public:
 	void set_letters(Letters lttrs);
 	void set_level(Level lvl);
 	void print_words(ostream& os);
-	string hword_explanation();
+	string word_explanation(const string&);
 	pair<int, int> get_result(const string&);
 	bool is_wrong_word(const string&);
 };

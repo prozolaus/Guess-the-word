@@ -65,16 +65,18 @@ void Game::setResultRect(sf::RectangleShape& rect, float x)
 
 void Game::setText()
 {
-	string fontname = "Bebas_Neue_Cyrillic.ttf";
+	string fontname = "fonts\\Arial.ttf";
 	if (!font.loadFromFile(fontname))
 		throw runtime_error("Game::setGame(): cannot open a font file " + fontname);
 
 	wstring congrats = language == Language::UKR ? L"Перемога!" : L"Победа!";
 	wstring wrword = language == Language::UKR ? L"Такого слова немає в базі даних гри!" : L"Такого слова нет в базе данных игры!";
+	wstring explword = language == Language::UKR ? L"Показати тлумачення слова" : L"Показать толкование слова";
 	result_text.setFont(font);
 	result_text.setFillColor(sf::Color::Blue);
 	result_text.move(20, 565);
 	result_text.setString(L"Результат:");
+	result_text.setCharacterSize(28);
 	win_text.setFont(font);
 	win_text.setFillColor(bgcolor);
 	win_text.move(350, 555);
@@ -84,21 +86,20 @@ void Game::setText()
 	menu_text.setFillColor(sf::Color::Black);
 	menu_text.move(620, 20);
 	menu_text.setString(L"Меню");
+	menu_text.setCharacterSize(24);
 	wrong_word_text.setFont(font);
 	wrong_word_text.setFillColor(bgcolor);
-	wrong_word_text.move(20, 650);
+	wrong_word_text.move(20, 400);
 	wrong_word_text.setString(wrword);
+	word_expl_text.setFont(font);
+	word_expl_text.move(20, 650);
+	word_expl_text.setString(explword);
+	word_expl_text.setCharacterSize(24);
 }
 
 bool Game::isWrongWord()
 {
-	if (dictionary.is_wrong_word(word))
-	{
-		wrong_word_text.setFillColor(sf::Color::Red);
-		return true;
-	}
-	wrong_word_text.setFillColor(bgcolor);
-	return false;
+	return dictionary.is_wrong_word(word) ? true : false;
 }
 
 void Game::letterInit()
@@ -144,6 +145,15 @@ bool Game::allRectanglesFull()
 
 void Game::drawAll(sf::RenderWindow& window)
 {
+	for (int i = 0; i < history.size(); i++)
+		window.draw(history[i]);
+
+	window.draw(result_text);
+	window.draw(menu_text);
+	window.draw(win_text);
+	window.draw(wrong_word_text);
+	window.draw(word_expl_text);
+
 	for (int i = 0; i < rectangles.size(); i++)
 		window.draw(rectangles[i]);
 
@@ -158,13 +168,83 @@ void Game::drawAll(sf::RenderWindow& window)
 		window.draw(result_sprites[i]);
 		window.draw(result_sprites2[i]);
 	}
-
-	for (int i = 0; i < history.size(); i++)
-		window.draw(history[i]);
-
-	window.draw(result_text);
-	window.draw(menu_text);
-	window.draw(win_text);
-	window.draw(wrong_word_text);
 }
 
+bool Game::isAnySpriteContain(int x, int y)
+{
+	for (int i = 0; i < sprites.size(); i++)
+		if (sprites[i].getGlobalBounds().contains(x, y))
+		{
+			setdX(x - sprites[i].getPosition().x);
+			setdY(y - sprites[i].getPosition().y);
+			myspr = &sprites[i];
+			return true;
+		}
+	return false;
+}
+
+bool Game::isAnySpriteinRect(int x, int y)
+{
+	setMotion(false);
+	myspr->setColor(sf::Color::White);
+	if (myspr->getLetterHiding())
+		myspr->setColor(sf::Color{ 255,255,255,20 });
+	int i = 0;
+	for (; i < rectangles.size(); i++)
+		if (rectangles[i].getGlobalBounds().contains(x, y) && !rectangles[i].getFilling())
+		{
+			if (myspr->getConnectedRectangle())
+				myspr->getConnectedRectangle()->setFilling(false);
+			myspr->setPosition(rectangles[i].getPosition().x, rectangles[i].getPosition().y);
+			myspr->connectRectangle(&rectangles[i]);
+			rectangles[i].setFilling(true);
+			setLetterInWord(i, myspr->getLetter());
+			break;
+		}
+	return i == rectangles.size() ? false : true;
+}
+
+void Game::resetCurrentSprite()
+{
+	myspr->setStartPosition();
+	if (myspr->getConnectedRectangle())
+		myspr->getConnectedRectangle()->setFilling(false);
+	myspr->connectRectangle(nullptr);
+}
+
+void Game::moveSprite(int x, int y)
+{
+	myspr->setColor(sf::Color::Green);
+	myspr->setPosition(x - getdX(), y - getdY());
+}
+
+void Game::setSpriteHidingOptions()
+{
+	(myspr->getColor() == sf::Color::White) ? myspr->setColor(sf::Color{ 255,255,255,20 }) : myspr->setColor(sf::Color::White);
+	myspr->getLetterHiding() ? myspr->setLetterHiding(false) : myspr->setLetterHiding(true);
+}
+
+void Game::resetResultSprites()
+{
+	for (int i = 0; i < result_sprites.size(); i++)
+	{
+		result_sprites[i].setStartPosition();
+		result_sprites2[i].setStartPosition();
+	}
+}
+
+void Game::resultHandling()
+{
+	pair<int, int> result = dictionary.get_result(word);
+	result_sprites[result.first].setPosition(resultrect1.getPosition());
+	result_sprites2[result.second].setPosition(resultrect2.getPosition());
+	string s{ word + " - " + to_string(result.first) + ":" + to_string(result.second) };
+	sf::Text t{ filesystem::path(s).wstring(), font, 22 };
+	history.push_back(t);
+	history.back().setPosition(470, history.size() * 24);
+	history.back().setFillColor(sf::Color::Blue);
+	if (history.size() > 1 && history[history.size() - 2].getString() == t.getString())
+		history.pop_back();
+	if (result.first == wordSize() && result.second == wordSize())
+		win_text.setFillColor(sf::Color::Magenta);
+}

@@ -4,6 +4,7 @@
 class MenuText : public sf::Text
 {
 	sf::Font font;
+	string fontname;
 
 public:
 	MenuText(const string& text);

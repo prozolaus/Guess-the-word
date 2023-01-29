@@ -2,7 +2,9 @@
 
 MenuText::MenuText(const string& text) : Text()
 {
-	font.loadFromFile("Bebas_Neue_Cyrillic.ttf");
+	fontname = "fonts\\Bebas_Neue_Cyrillic.ttf";
+	if (!font.loadFromFile(fontname))
+		throw runtime_error("Game::setGame(): cannot open a font file " + fontname);
 	Text::setFont(font);
 	Text::setString(text);
 	Text::setFillColor(sf::Color::Black);
@@ -20,7 +22,7 @@ void MenuText::setFont(const sf::Font& f)
 Menu::Menu(unsigned int window_width, unsigned int window_height)
 	: start{ "Start" },
 	lang{ "Language:" }, ua{ "UA" }, ru{ "RU" },
-	lttrs{ "Letters:" }, three{ "3" }, four{ "4" },
+	lttrs{ "Letters:" }, three{ "Three" }, four{ "Four" },
 	lvl{ "Level:" }, school{ "School" }, normal{ "Normal" }, erudite{ "Erudite" },
 	UA_lang{ false }, RU_lang{ false },
 	three_ls{ false }, four_ls{ false },
@@ -32,7 +34,7 @@ Menu::Menu(unsigned int window_width, unsigned int window_height)
 	ru.setPosition(ua.getPosition().x + x / 2, y);
 	lttrs.setPosition(x, 1.5 * y);
 	three.setPosition(ua.getPosition().x, 1.5 * y);
-	four.setPosition(ru.getPosition().x, 1.5 * y);
+	four.setPosition(three.getPosition().x + three.getGlobalBounds().width + 30, 1.5 * y);
 	lvl.setPosition(x, 2 * y);
 	school.setPosition(three.getPosition().x, 2 * y);
 	normal.setPosition(school.getPosition().x + school.getGlobalBounds().width + x / 3, 2 * y);

@@ -114,10 +114,11 @@ string Dictionary::get_random_word()
 	return  (*iter).first;
 }
 
-string Dictionary::hword_explanation()
+string Dictionary::word_explanation(const string& word)
 {
-	//return hidden_word + ": " + current_dict[hidden_word];
-	return current_dict[hidden_word];
+	if (combined_dict.find(word) == combined_dict.end())
+		throw runtime_error("Dictionary::word_explanation(): no such word in the database!");
+	return combined_dict[word];
 }
 
 pair<int, int> Dictionary::get_result(const string& pword)

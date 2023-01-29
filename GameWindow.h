@@ -3,10 +3,16 @@
 
 class GameWindow : public sf::RenderWindow
 {
+	bool gaming;
 	using sf::RenderWindow::RenderWindow;
 	MenuSettings menu();
-	bool check_event(sf::Event&, Game&, sf::Vector2i&);
+	void eventHandling(Game&);
 	void play(Game&);
+	void oneTimeLeftActions(Game&, sf::Vector2i);
+	void oneTimeRightActions(Game&, sf::Vector2i);
+	void actions(Game&, sf::Vector2i);
+	void explTextFormatting(sf::Text&, wstring& ws);
+	void wordExplaining(Game&);
 
 public:
 	void runGame();
