@@ -167,5 +167,7 @@ vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map,
 		if (vs.size() == n)
 			break;
 	}
+	if (vs.size() == 0)
+		vs.push_back(language == Language::UKR ? "Не знайдено слів" : "Не найдено слов");
 	return vs;
 }

@@ -102,6 +102,11 @@ void Game::setText()
 	clue_text.setString(clword);
 	clue_text.setCharacterSize(20);
 	clue_text.setFillColor(sf::Color::Black);
+	restart_text.setFont(font);
+	restart_text.setFillColor(sf::Color::Black);
+	restart_text.move(620, 60);
+	restart_text.setString(L"Рестарт");
+	restart_text.setCharacterSize(20);
 }
 
 bool Game::isWrongWord()
@@ -161,6 +166,7 @@ void Game::drawAll(sf::RenderWindow& window)
 	window.draw(win_text);
 	window.draw(wrong_word_text);
 	window.draw(word_expl_text);
+	window.draw(restart_text);
 
 	for (int i = 0; i < clues.size(); i++)
 		window.draw(clues[i]);
@@ -231,7 +237,7 @@ void Game::moveSprite(int x, int y)
 
 void Game::setSpriteHidingOptions()
 {
-	(myspr->getColor() == sf::Color::White) ? myspr->setColor(sf::Color{ 255,255,255,20 }) : myspr->setColor(sf::Color::White);
+	(myspr->getColor() == sf::Color::White) ? myspr->setColor(sf::Color{ 255,255,255,45 }) : myspr->setColor(sf::Color::White);
 	if (myspr->getLetterHiding())
 	{
 		myspr->setLetterHiding(false);
@@ -276,6 +282,14 @@ void Game::resultHandling()
 		history.pop_back();
 	if (result.first == wordSize() && result.second == wordSize())
 		win_text.setFillColor(sf::Color::Magenta);
+	else if (result.first == 0 && result.second == 0)
+		for (int i = 0; i < sprites.size(); i++)
+			if (sprites[i].getConnectedRectangle())
+			{
+				myspr = &sprites[i];
+				setSpriteHidingOptions();
+				myspr = nullptr;
+			}
 }
 
 void Game::updateClueWords()
@@ -292,6 +306,11 @@ void Game::updateClueWords()
 		clues[i] = sf::Text{ filesystem::path(clue_words[i]).wstring(), font, 16 };
 		clues[i].move(630, 630 - (i * 20));
 		clues[i].setFillColor(sf::Color::Black);
+	}
+	if (clue_words.size() == 1 && clue_words[0].size() > word.size())
+	{
+		clues[0].setPosition(570, 630);
+		clues[0].setFillColor(sf::Color::Red);
 	}
 }
 

@@ -3,7 +3,7 @@
 
 class GameWindow : public sf::RenderWindow
 {
-	bool gaming;
+	bool gaming = true, restart = false;
 	using sf::RenderWindow::RenderWindow;
 	MenuSettings menu();
 	void eventHandling(Game&);

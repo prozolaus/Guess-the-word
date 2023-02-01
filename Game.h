@@ -45,7 +45,7 @@ class Game
 	std::vector<MyRectangleShape> rectangles;
 	MyLetterSprite* myspr = nullptr;
 	sf::RectangleShape resultrect1, resultrect2;
-	sf::Text result_text, win_text, menu_text, wrong_word_text, word_expl_text, clue_text;
+	sf::Text result_text, win_text, menu_text, wrong_word_text, word_expl_text, clue_text, restart_text;
 	vector<sf::Text> history, clues;
 	sf::Font font;
 	string word;
@@ -82,6 +82,8 @@ public:
 	void resetRectangleLetters();
 	void setMenuTextColor(sf::Color c) { menu_text.setFillColor(c); }
 	bool isMenuTextContain(int x, int y) { return menu_text.getGlobalBounds().contains(x, y); }
+	void setRestartTextColor(sf::Color c) { restart_text.setFillColor(c); }
+	bool isRestartTextContain(int x, int y) { return restart_text.getGlobalBounds().contains(x, y); }
 	void setClueTextColor(sf::Color c) { clue_text.setFillColor(c); }
 	bool isClueTextContain(int x, int y) { return clue_text.getGlobalBounds().contains(x, y); }
 	void setExplTextColor(sf::Color c) { word_expl_text.setFillColor(c); }

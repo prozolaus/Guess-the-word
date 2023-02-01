@@ -34,8 +34,7 @@ MenuSettings GameWindow::menu()
 
 void GameWindow::play(Game& game)
 {
-	gaming = true;
-	while (isOpen() && gaming)
+	while (isOpen() && gaming && !restart)
 	{
 		eventHandling(game);
 		clear(sf::Color::White);
@@ -59,6 +58,8 @@ void GameWindow::eventHandling(Game& game)
 			if (event.key.code == sf::Mouse::Left)
 				if (game.isMenuTextContain(pixelPos.x, pixelPos.y))
 					gaming = false;
+				else if (game.isRestartTextContain(pixelPos.x, pixelPos.y))
+					restart = true;
 				else if (game.isClueTextContain(pixelPos.x, pixelPos.y))
 					game.updateClueWords();
 				else if (game.isAnySpriteContain(pixelPos.x, pixelPos.y)) 
@@ -112,6 +113,7 @@ void GameWindow::actions(Game& game, sf::Vector2i pixelPos)
 {
 	game.isMenuTextContain(pixelPos.x, pixelPos.y) ? game.setMenuTextColor(sf::Color::Blue) : game.setMenuTextColor(sf::Color::Black);
 	game.isClueTextContain(pixelPos.x, pixelPos.y) ? game.setClueTextColor(sf::Color::Blue) : game.setClueTextColor(sf::Color::Black);
+	game.isRestartTextContain(pixelPos.x, pixelPos.y) ? game.setRestartTextColor(sf::Color::Blue) : game.setRestartTextColor(sf::Color::Black);
 	game.setWrongWordTextColor(game.getBgColor());
 	if (game.allRectanglesFull())
 		if (!game.isWrongWord())
@@ -184,9 +186,13 @@ void GameWindow::wordExplaining(Game& game)
 
 void GameWindow::runGame()
 {
+	MenuSettings ms;
 	while (isOpen())
 	{
-		Game game{ menu() };
+		if (!restart) ms = menu();
+		Game game{ ms };
+		restart = false;
+		gaming = true;
 		play(game);
 	}
 }
