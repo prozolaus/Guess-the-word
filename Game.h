@@ -45,11 +45,12 @@ class Game
 	std::vector<MyRectangleShape> rectangles;
 	MyLetterSprite* myspr = nullptr;
 	sf::RectangleShape resultrect1, resultrect2;
-	sf::Text result_text, win_text, menu_text, wrong_word_text, word_expl_text;
-	vector<sf::Text> history;
+	sf::Text result_text, win_text, menu_text, wrong_word_text, word_expl_text, clue_text;
+	vector<sf::Text> history, clues;
 	sf::Font font;
 	string word;
-
+	vector<string> history_vs, clue_words;
+	vector<char> hidden_letters;
 	void setGame();
 	void setText();
 	void setResultRect(sf::RectangleShape& rect, float x);
@@ -78,11 +79,16 @@ public:
 	void moveSprite(int x, int y);
 	void setSpriteHidingOptions();
 	void resetResultSprites();
+	void resetRectangleLetters();
 	void setMenuTextColor(sf::Color c) { menu_text.setFillColor(c); }
 	bool isMenuTextContain(int x, int y) { return menu_text.getGlobalBounds().contains(x, y); }
+	void setClueTextColor(sf::Color c) { clue_text.setFillColor(c); }
+	bool isClueTextContain(int x, int y) { return clue_text.getGlobalBounds().contains(x, y); }
 	void setExplTextColor(sf::Color c) { word_expl_text.setFillColor(c); }
 	bool isExplTextContain(int x, int y) { return word_expl_text.getGlobalBounds().contains(x, y); }
 	void setWrongWordTextColor(sf::Color c) { wrong_word_text.setFillColor(c); }
 	void resultHandling();
 	wstring getWordExplanation() { return filesystem::path(dictionary.word_explanation(word)).wstring(); }
+	void updateClueWords();
+	void hideClues();
 };

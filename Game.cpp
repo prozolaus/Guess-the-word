@@ -16,7 +16,7 @@ Game::Game(MenuSettings ms)
 
 void Game::setGame()
 {
-	word.resize(wordSize());
+	word.resize(wordSize(), ' ');
 	for (int i = 0; i < alphabet_size; i++)
 	{
 		string lng = language == Language::UKR ? "ukr\\" : "rus\\";
@@ -72,6 +72,7 @@ void Game::setText()
 	wstring congrats = language == Language::UKR ? L"Перемога!" : L"Победа!";
 	wstring wrword = language == Language::UKR ? L"Такого слова немає в базі даних гри!" : L"Такого слова нет в базе данных игры!";
 	wstring explword = language == Language::UKR ? L"Показати тлумачення слова" : L"Показать толкование слова";
+	wstring clword = language == Language::UKR ? L"Підказка" : L"Подсказка";
 	result_text.setFont(font);
 	result_text.setFillColor(sf::Color::Blue);
 	result_text.move(20, 565);
@@ -88,6 +89,7 @@ void Game::setText()
 	menu_text.setString(L"Меню");
 	menu_text.setCharacterSize(24);
 	wrong_word_text.setFont(font);
+	wrong_word_text.setCharacterSize(20);
 	wrong_word_text.setFillColor(bgcolor);
 	wrong_word_text.move(20, 400);
 	wrong_word_text.setString(wrword);
@@ -95,6 +97,11 @@ void Game::setText()
 	word_expl_text.move(20, 650);
 	word_expl_text.setString(explword);
 	word_expl_text.setCharacterSize(24);
+	clue_text.setFont(font);
+	clue_text.move(600, 660);
+	clue_text.setString(clword);
+	clue_text.setCharacterSize(20);
+	clue_text.setFillColor(sf::Color::Black);
 }
 
 bool Game::isWrongWord()
@@ -150,9 +157,13 @@ void Game::drawAll(sf::RenderWindow& window)
 
 	window.draw(result_text);
 	window.draw(menu_text);
+	window.draw(clue_text);
 	window.draw(win_text);
 	window.draw(wrong_word_text);
 	window.draw(word_expl_text);
+
+	for (int i = 0; i < clues.size(); i++)
+		window.draw(clues[i]);
 
 	for (int i = 0; i < rectangles.size(); i++)
 		window.draw(rectangles[i]);
@@ -221,7 +232,17 @@ void Game::moveSprite(int x, int y)
 void Game::setSpriteHidingOptions()
 {
 	(myspr->getColor() == sf::Color::White) ? myspr->setColor(sf::Color{ 255,255,255,20 }) : myspr->setColor(sf::Color::White);
-	myspr->getLetterHiding() ? myspr->setLetterHiding(false) : myspr->setLetterHiding(true);
+	if (myspr->getLetterHiding())
+	{
+		myspr->setLetterHiding(false);
+		auto it = find(hidden_letters.begin(), hidden_letters.end(), myspr->getLetter());
+		hidden_letters.erase(it);
+	}
+	else
+	{
+		myspr->setLetterHiding(true);
+		hidden_letters.push_back(myspr->getLetter());
+	}
 }
 
 void Game::resetResultSprites()
@@ -233,11 +254,19 @@ void Game::resetResultSprites()
 	}
 }
 
+void Game::resetRectangleLetters()
+{
+	for (int i = 0; i < rectangles.size(); i++)
+		if (!rectangles[i].getFilling())
+			setLetterInWord(i, ' ');
+}
+
 void Game::resultHandling()
 {
 	pair<int, int> result = dictionary.get_result(word);
 	result_sprites[result.first].setPosition(resultrect1.getPosition());
 	result_sprites2[result.second].setPosition(resultrect2.getPosition());
+	history_vs.push_back(word);
 	string s{ word + " - " + to_string(result.first) + ":" + to_string(result.second) };
 	sf::Text t{ filesystem::path(s).wstring(), font, 22 };
 	history.push_back(t);
@@ -247,4 +276,27 @@ void Game::resultHandling()
 		history.pop_back();
 	if (result.first == wordSize() && result.second == wordSize())
 		win_text.setFillColor(sf::Color::Magenta);
+}
+
+void Game::updateClueWords()
+{
+	unordered_map<unsigned int, char> umap;
+	for (int i = 0; i < word.size(); i++)
+		if (word[i] != ' ')
+			umap.insert(make_pair(i, word[i]));
+	if (umap.size() == wordSize()) return;
+	clue_words = dictionary.get_clue_words(umap, history_vs, hidden_letters);
+	clues.resize(clue_words.size());
+	for (int i = 0; i < clues.size(); i++)
+	{
+		clues[i] = sf::Text{ filesystem::path(clue_words[i]).wstring(), font, 16 };
+		clues[i].move(630, 630 - (i * 20));
+		clues[i].setFillColor(sf::Color::Black);
+	}
+}
+
+void Game::hideClues()
+{
+	for (sf::Text& c : clues)
+		c.setFillColor(bgcolor);
 }

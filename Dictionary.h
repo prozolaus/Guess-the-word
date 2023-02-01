@@ -59,4 +59,5 @@ public:
 	string word_explanation(const string&);
 	pair<int, int> get_result(const string&);
 	bool is_wrong_word(const string&);
+	vector<string> get_clue_words(unordered_map<unsigned int, char>, const vector<string>&, const vector<char>&, const unsigned int n = 5);
 };

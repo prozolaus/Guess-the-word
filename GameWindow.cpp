@@ -59,6 +59,8 @@ void GameWindow::eventHandling(Game& game)
 			if (event.key.code == sf::Mouse::Left)
 				if (game.isMenuTextContain(pixelPos.x, pixelPos.y))
 					gaming = false;
+				else if (game.isClueTextContain(pixelPos.x, pixelPos.y))
+					game.updateClueWords();
 				else if (game.isAnySpriteContain(pixelPos.x, pixelPos.y)) 
 					game.setMotion(true);
 
@@ -84,8 +86,12 @@ void GameWindow::eventHandling(Game& game)
 void GameWindow::oneTimeLeftActions(Game& game, sf::Vector2i pixelPos)
 {
 	if (!game.isAnySpriteinRect(pixelPos.x, pixelPos.y))
-			game.resetCurrentSprite();
-	if (game.allRectanglesFull() && !game.isWrongWord()) game.resultHandling();
+		game.resetCurrentSprite();
+	if (game.allRectanglesFull() && !game.isWrongWord())
+	{
+		game.resultHandling();
+		game.hideClues();
+	}
 	else game.resetResultSprites();
 }
 
@@ -105,12 +111,17 @@ void GameWindow::oneTimeRightActions(Game& game, sf::Vector2i pixelPos)
 void GameWindow::actions(Game& game, sf::Vector2i pixelPos)
 {
 	game.isMenuTextContain(pixelPos.x, pixelPos.y) ? game.setMenuTextColor(sf::Color::Blue) : game.setMenuTextColor(sf::Color::Black);
+	game.isClueTextContain(pixelPos.x, pixelPos.y) ? game.setClueTextColor(sf::Color::Blue) : game.setClueTextColor(sf::Color::Black);
 	game.setWrongWordTextColor(game.getBgColor());
 	if (game.allRectanglesFull())
 		if (!game.isWrongWord())
 			game.isExplTextContain(pixelPos.x, pixelPos.y) ? game.setExplTextColor(sf::Color::Blue) : game.setExplTextColor(sf::Color::Cyan);
 		else game.setWrongWordTextColor(sf::Color::Red);
-	else game.setExplTextColor(game.getBgColor());
+	else
+	{
+		game.setExplTextColor(game.getBgColor());
+		game.resetRectangleLetters();
+	}
 	if (game.getMotion()) game.moveSprite(pixelPos.x, pixelPos.y);
 }
 

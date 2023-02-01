@@ -132,3 +132,40 @@ bool Dictionary::is_wrong_word(const string& word)
 {
 	return (combined_dict.find(word) != combined_dict.end()) ? false : true;
 }
+
+vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map, 
+	const vector<string>& words_from_history, const vector<char>& hidden_letters, const unsigned int n)
+{
+	string s1 = "Dictionary::get_some_words(unordered_map<int, char> map): map ";
+	string s2 = " must be less than word length";
+	if (map.size() > (int)letters - 1)
+		throw runtime_error(s1 + "size" + s2);
+	for (auto m : map)
+		if (m.first > (int)letters - 1)
+			throw runtime_error(s1 + "key" + s2);
+
+	int count;
+	vector<string> vs;
+	for (const auto& cd : combined_dict)
+	{
+		count = 0;
+		for (auto m : map) 
+			if (cd.first[m.first] == map[m.first])
+				count++;
+		if (count == map.size())
+		{
+			bool hidletter = false;
+			for (int i = 0; i < cd.first.size() && !hidletter; i++)
+				for (int j = 0; j < hidden_letters.size() && !hidletter; j++)
+					if (cd.first[i] == hidden_letters[j])
+						hidletter = true;
+			bool isFromHistory = false;
+			for (auto w : words_from_history) if (w == cd.first) isFromHistory = true;
+			if (!hidletter && !isFromHistory) 
+				vs.push_back(cd.first);
+		}
+		if (vs.size() == n)
+			break;
+	}
+	return vs;
+}
