@@ -133,7 +133,7 @@ void GameWindow::explTextFormatting(sf::Text& text, wstring& ws)
 {
 	for (int i = 0; i < ws.size(); i++)
 	{
-		if (ws[i] == L' ' && (ws[i + 1] == L'I' || ws[i + 1] == L'V') && ws[i - 1] == L'.')
+		if (ws[i] == L' ' && (ws[i + 1] == L'I' || ws[i + 1] == L'V') && (ws[i - 1] == L'.' || ws[i - 1] == L' '))
 			ws.replace(ws.begin() + i, ws.begin() + i + 1, L"\n\n");
 
 		else if (ws[i] == L' ' && ws[i + 1] >= L'0' && ws[i + 1] <= L'9' && ws[i + 2] == L'.')

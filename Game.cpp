@@ -287,6 +287,7 @@ void Game::resultHandling()
 			if (sprites[i].getConnectedRectangle())
 			{
 				myspr = &sprites[i];
+				myspr->setColor(sf::Color::White);
 				setSpriteHidingOptions();
 				myspr = nullptr;
 			}

@@ -1,6 +1,7 @@
 #include "GameWindow.h"
 
 int main()
+//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 try
 {
 	GameWindow window(sf::VideoMode(700, 700), "Guess the word");
