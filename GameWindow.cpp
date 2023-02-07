@@ -184,6 +184,25 @@ void GameWindow::wordExplaining(Game& game)
 
 //------------------------------------------------------------------------------------------------
 
+void GameWindow::updateTitle(MenuSettings ms)
+{
+	string gname = "Guess the word";
+	string lang = (ms.language == Language::UKR) ? "UKR" : "RUS";
+	string lrs = (ms.letters == Letters::THREE) ? "3" : "4";
+	string lvl;
+	switch (ms.level)
+	{
+	case Level::SCHOOL:	lvl = "school";	break;
+	case Level::NORMAL:	lvl = "normal";	break;
+	case Level::ERUDITE: lvl = "erudite"; break;
+	default: break;
+	}
+	string title = gname + ": " + lang + " - " + lrs + " - " + lvl;
+	setTitle(title);
+}
+
+//------------------------------------------------------------------------------------------------
+
 void GameWindow::runGame()
 {
 	MenuSettings ms;
@@ -191,6 +210,7 @@ void GameWindow::runGame()
 	{
 		if (!restart) ms = menu();
 		Game game{ ms };
+		updateTitle(ms);
 		restart = false;
 		gaming = true;
 		play(game);

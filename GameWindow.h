@@ -16,6 +16,7 @@ class GameWindow : public sf::RenderWindow
 
 public:
 	void runGame();
+	void updateTitle(MenuSettings ms);
 };
 
 //-----------------------------------------------------------------------------
