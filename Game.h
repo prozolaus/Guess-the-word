@@ -45,6 +45,7 @@ class Game
 	std::vector<MyRectangleShape> rectangles;
 	MyLetterSprite* myspr = nullptr;
 	sf::RectangleShape resultrect1, resultrect2;
+	sf::CircleShape dot1, dot2;
 	sf::Text result_text, win_text, menu_text, wrong_word_text, word_expl_text, clue_text, restart_text;
 	vector<sf::Text> history, clues;
 	sf::Font font;
@@ -54,6 +55,7 @@ class Game
 	void setGame();
 	void setText();
 	void setResultRect(sf::RectangleShape& rect, float x);
+	void setResultDot(sf::CircleShape& dot, int y);
 
 public:
 	Game(MenuSettings);

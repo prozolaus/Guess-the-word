@@ -50,8 +50,18 @@ void Game::setGame()
 	}
 	setResultRect(resultrect1, 166.f);
 	setResultRect(resultrect2, 262.f);
+	setResultDot(dot1, 570.f);
+	setResultDot(dot2, 590.f);
 	setText();
 	letterInit();
+}
+
+void Game::setResultDot(sf::CircleShape& dot, int y)
+{
+	dot.setRadius(3);
+	dot.setPosition(243, y);
+	dot.setFillColor(sf::Color{ 220,220,220 });
+	dot.setOutlineThickness(1);
 }
 
 void Game::setResultRect(sf::RectangleShape& rect, float x)
@@ -167,6 +177,8 @@ void Game::drawAll(sf::RenderWindow& window)
 	window.draw(wrong_word_text);
 	window.draw(word_expl_text);
 	window.draw(restart_text);
+	window.draw(dot1);
+	window.draw(dot2);
 
 	for (int i = 0; i < clues.size(); i++)
 		window.draw(clues[i]);
