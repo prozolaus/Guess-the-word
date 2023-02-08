@@ -259,7 +259,7 @@ void Game::setSpriteHidingOptions()
 	else
 	{
 		myspr->setLetterHiding(true);
-		hidden_letters.push_back(myspr->getLetter());
+		hidden_letters.insert(myspr->getLetter());
 	}
 }
 
@@ -299,8 +299,9 @@ void Game::resultHandling()
 			if (sprites[i].getConnectedRectangle())
 			{
 				myspr = &sprites[i];
-				myspr->setColor(sf::Color::White);
-				setSpriteHidingOptions();
+				myspr->setColor(sf::Color{ 255,255,255,45 });
+				myspr->setLetterHiding(true);
+				hidden_letters.insert(myspr->getLetter());
 				myspr = nullptr;
 			}
 }
@@ -312,7 +313,7 @@ void Game::updateClueWords()
 		if (word[i] != ' ')
 			umap.insert(make_pair(i, word[i]));
 	if (umap.size() == wordSize()) return;
-	clue_words = dictionary.get_clue_words(umap, history_vs, hidden_letters);
+	clue_words = dictionary.get_clue_words(umap, history_vs, hidden_letters, 25);
 	clues.resize(clue_words.size());
 	for (int i = 0; i < clues.size(); i++)
 	{

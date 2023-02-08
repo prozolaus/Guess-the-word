@@ -51,7 +51,7 @@ class Game
 	sf::Font font;
 	string word;
 	vector<string> history_vs, clue_words;
-	vector<char> hidden_letters;
+	std::set<char> hidden_letters;
 	void setGame();
 	void setText();
 	void setResultRect(sf::RectangleShape& rect, float x);

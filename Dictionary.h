@@ -3,6 +3,7 @@
 #include <string>
 #include <Windows.h>
 #include <unordered_map>
+#include <set>
 #include <algorithm>
 #include <chrono>
 #include <random> 
@@ -59,5 +60,5 @@ public:
 	string word_explanation(const string&);
 	pair<int, int> get_result(const string&);
 	bool is_wrong_word(const string&);
-	vector<string> get_clue_words(unordered_map<unsigned int, char>, const vector<string>&, const vector<char>&, const unsigned int n = 5);
+	vector<string> get_clue_words(unordered_map<unsigned int, char>, const vector<string>&, const std::set<char>&, const unsigned int n = 5);
 };

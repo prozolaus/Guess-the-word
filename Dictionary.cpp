@@ -134,7 +134,7 @@ bool Dictionary::is_wrong_word(const string& word)
 }
 
 vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map, 
-	const vector<string>& words_from_history, const vector<char>& hidden_letters, const unsigned int n)
+	const vector<string>& words_from_history, const std::set<char>& hidden_letters, const unsigned int n)
 {
 	string s1 = "Dictionary::get_some_words(unordered_map<int, char> map): map ";
 	string s2 = " must be less than word length";
@@ -156,8 +156,8 @@ vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map,
 		{
 			bool hidletter = false;
 			for (int i = 0; i < cd.first.size() && !hidletter; i++)
-				for (int j = 0; j < hidden_letters.size() && !hidletter; j++)
-					if (cd.first[i] == hidden_letters[j])
+				for (char hl : hidden_letters)
+					if (!hidletter && cd.first[i] == hl)
 						hidletter = true;
 			bool isFromHistory = false;
 			for (auto w : words_from_history) if (w == cd.first) isFromHistory = true;
