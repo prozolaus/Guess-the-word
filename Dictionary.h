@@ -27,12 +27,19 @@ enum class Level
 	ERUDITE
 };
 
+enum class Guesser
+{
+	COMPUTER,
+	PLAYER
+};
+
 struct MenuSettings
 {
 	Language language;
 	Letters letters;
 	Level level;
-	MenuSettings() : language{ Language::UKR }, letters{ Letters::THREE }, level{ Level::SCHOOL } {}
+	Guesser guesser;
+	MenuSettings() : language{ Language::UKR }, letters{ Letters::THREE }, level{ Level::SCHOOL }, guesser{ Guesser::PLAYER} {}
 };
 
 class Dictionary

@@ -5,10 +5,11 @@ Game::Game(MenuSettings ms)
 	dictionary{ ms.language, ms.letters, ms.level },
 	language{ ms.language },
 	letters{ ms.letters },
+	word_size{int(letters)},
 	motion{ false }, hiding{ false },
 	dX{ 0 }, dY{ 0 },
 	textures{ alphabet_size },
-	result_textures{ wordSize() + 1 },
+	result_textures{ word_size + 1 },
 	bgcolor{sf::Color::White}
 {
 	setGame();
@@ -16,7 +17,7 @@ Game::Game(MenuSettings ms)
 
 void Game::setGame()
 {
-	word.resize(wordSize(), ' ');
+	word.resize(word_size, ' ');
 	for (int i = 0; i < alphabet_size; i++)
 	{
 		string lng = language == Language::UKR ? "ukr\\" : "rus\\";
@@ -31,7 +32,7 @@ void Game::setGame()
 			sprites.push_back(MyLetterSprite{ textures[count++] });
 			sprites.back().setStartCoords(j * 64, i * 64);
 		}
-	rectangles.assign(wordSize(), MyRectangleShape{ sf::Vector2f(64.f, 64.f) });
+	rectangles.assign(word_size, MyRectangleShape{ sf::Vector2f(64.f, 64.f) });
 	for (int i = 0, xr = letters == Letters::THREE ? 150 : 118; i < rectangles.size(); i++)
 	{
 		rectangles[i].setFillColor(sf::Color(175, 180, 240));
@@ -39,7 +40,7 @@ void Game::setGame()
 		rectangles[i].setOutlineColor(sf::Color::Black);
 		rectangles[i].setOutlineThickness(1.f);
 	}
-	for (int i = 0; i <= wordSize(); i++)
+	for (int i = 0; i <= word_size; i++)
 	{
 		std::string s = "numbers\\" + std::to_string(i) + ".png";
 		result_textures[i].loadFromFile(s);
@@ -119,11 +120,6 @@ void Game::setText()
 	restart_text.setCharacterSize(20);
 }
 
-bool Game::isWrongWord()
-{
-	return dictionary.is_wrong_word(word) ? true : false;
-}
-
 void Game::letterInit()
 {
 	int count = -32;
@@ -199,35 +195,35 @@ void Game::drawAll(sf::RenderWindow& window)
 	}
 }
 
-bool Game::isAnySpriteContain(int x, int y)
+bool Game::isAnySpriteContainMousePos()
 {
 	for (int i = 0; i < sprites.size(); i++)
-		if (sprites[i].getGlobalBounds().contains(x, y))
+		if (sprites[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 		{
-			setdX(x - sprites[i].getPosition().x);
-			setdY(y - sprites[i].getPosition().y);
+			dX = pixelPos.x - sprites[i].getPosition().x;
+			dY = pixelPos.y - sprites[i].getPosition().y;
 			myspr = &sprites[i];
 			return true;
 		}
 	return false;
 }
 
-bool Game::isAnySpriteinRect(int x, int y)
+bool Game::isAnySpriteinRect()
 {
-	setMotion(false);
+	motion = false;
 	myspr->setColor(sf::Color::White);
 	if (myspr->getLetterHiding())
 		myspr->setColor(sf::Color{ 255,255,255,20 });
 	int i = 0;
 	for (; i < rectangles.size(); i++)
-		if (rectangles[i].getGlobalBounds().contains(x, y) && !rectangles[i].getFilling())
+		if (rectangles[i].getGlobalBounds().contains(pixelPos.x, pixelPos.y) && !rectangles[i].getFilling())
 		{
 			if (myspr->getConnectedRectangle())
 				myspr->getConnectedRectangle()->setFilling(false);
 			myspr->setPosition(rectangles[i].getPosition().x, rectangles[i].getPosition().y);
 			myspr->connectRectangle(&rectangles[i]);
 			rectangles[i].setFilling(true);
-			setLetterInWord(i, myspr->getLetter());
+			word.at(i) = myspr->getLetter();
 			break;
 		}
 	return i == rectangles.size() ? false : true;
@@ -241,10 +237,10 @@ void Game::resetCurrentSprite()
 	myspr->connectRectangle(nullptr);
 }
 
-void Game::moveSprite(int x, int y)
+void Game::moveSprite()
 {
 	myspr->setColor(sf::Color::Green);
-	myspr->setPosition(x - getdX(), y - getdY());
+	myspr->setPosition(pixelPos.x - dX, pixelPos.y - dY);
 }
 
 void Game::setSpriteHidingOptions()
@@ -276,7 +272,7 @@ void Game::resetRectangleLetters()
 {
 	for (int i = 0; i < rectangles.size(); i++)
 		if (!rectangles[i].getFilling())
-			setLetterInWord(i, ' ');
+			word.at(i) = ' ';
 }
 
 void Game::resultHandling()
@@ -292,7 +288,7 @@ void Game::resultHandling()
 	history.back().setFillColor(sf::Color::Blue);
 	if (history.size() > 1 && history[history.size() - 2].getString() == t.getString())
 		history.pop_back();
-	if (result.first == wordSize() && result.second == wordSize())
+	if (result.first == word_size && result.second == word_size)
 		win_text.setFillColor(sf::Color::Magenta);
 	else if (result.first == 0 && result.second == 0)
 		for (int i = 0; i < sprites.size(); i++)
@@ -311,7 +307,7 @@ void Game::updateClueWords()
 	for (int i = 0; i < word.size(); i++)
 		if (word[i] != ' ')
 			umap.insert(make_pair(i, word[i]));
-	if (umap.size() == wordSize()) return;
+	if (umap.size() == word_size) return;
 	clue_words = dictionary.get_clue_words(umap, history_vs, hidden_letters);
 	clues.resize(clue_words.size());
 	for (int i = 0; i < clues.size(); i++)
@@ -331,4 +327,151 @@ void Game::hideClues()
 {
 	for (sf::Text& c : clues)
 		c.setFillColor(bgcolor);
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+bool Game::play(sf::RenderWindow& window)
+{
+	while (window.isOpen())
+	{
+		pixelPos = sf::Mouse::getPosition(window);
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed)
+				window.close();
+			if (event.type == sf::Event::MouseButtonPressed)
+			{
+				if (event.key.code == sf::Mouse::Left)
+					if (menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+						return false;
+					else if (restart_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+						return true;
+					else if (clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+						updateClueWords();
+					else if (isAnySpriteContainMousePos())
+						motion = true;
+
+				if (event.key.code == sf::Mouse::Right)
+					if (isAnySpriteContainMousePos())
+						hiding = true;
+			}
+			if (event.type == sf::Event::MouseButtonReleased)
+			{
+				if (event.key.code == sf::Mouse::Left && word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+					if (allRectanglesFull() && !dictionary.is_wrong_word(word)) wordExplaining(window);
+				if (event.key.code == sf::Mouse::Left && motion)
+					oneTimeLeftActions();
+				if (event.key.code == sf::Mouse::Right && hiding)
+					oneTimeRightActions();
+			}
+		}
+		actions();
+		window.clear(sf::Color::White);
+		drawAll(window);
+		window.display();
+	}
+}
+
+//------------------------------------------------------------------------------------------------
+
+
+void Game::oneTimeLeftActions()
+{
+	if (!isAnySpriteinRect())
+		resetCurrentSprite();
+	if (allRectanglesFull() && !dictionary.is_wrong_word(word))
+	{
+		resultHandling();
+		hideClues();
+	}
+	else resetResultSprites();
+}
+
+//------------------------------------------------------------------------------------------------
+
+void Game::oneTimeRightActions()
+{
+	setSpriteHidingOptions();
+	resetCurrentSprite();
+	hiding = false;
+	if (!allRectanglesFull())
+		resetResultSprites();
+}
+
+//------------------------------------------------------------------------------------------------
+
+void Game::actions()
+{
+	menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? menu_text.setFillColor(sf::Color::Blue) : menu_text.setFillColor(sf::Color::Black);
+	clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? clue_text.setFillColor(sf::Color::Blue) : clue_text.setFillColor(sf::Color::Black);
+	restart_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? restart_text.setFillColor(sf::Color::Blue) : restart_text.setFillColor(sf::Color::Black);
+	wrong_word_text.setFillColor(bgcolor);
+	if (allRectanglesFull())
+		if (!dictionary.is_wrong_word(word))
+			word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color::Cyan);
+		else wrong_word_text.setFillColor(sf::Color::Red);
+	else
+	{
+		word_expl_text.setFillColor(bgcolor);
+		resetRectangleLetters();
+	}
+	if (motion) moveSprite();
+}
+
+//------------------------------------------------------------------------------------------------
+
+void Game::explTextFormatting(sf::RenderWindow& window, sf::Text& text, wstring& ws)
+{
+	for (int i = 0; i < ws.size(); i++)
+	{
+		if (ws[i] == L' ' && (ws[i + 1] == L'I' || ws[i + 1] == L'V') && (ws[i - 1] == L'.' || ws[i - 1] == L' '))
+			ws.replace(ws.begin() + i, ws.begin() + i + 1, L"\n\n");
+
+		else if (ws[i] == L' ' && ws[i + 1] >= L'0' && ws[i + 1] <= L'9' && ws[i + 2] == L'.')
+			ws[i] = L'\n';
+
+		else if (text.findCharacterPos(i).x > window.getSize().x - 50)
+		{
+			while (ws[i] != L' ') --i;
+			ws.replace(ws.begin() + i, ws.begin() + i + 1, L"\n");
+		}
+		text.setString(ws);
+	}
+	text.move(20, 20);
+	text.setFillColor(sf::Color::Black);
+}
+
+//------------------------------------------------------------------------------------------------
+
+void Game::wordExplaining(sf::RenderWindow& window)
+{
+	sf::Font font;
+	string fontname = "fonts\\Arial.ttf";
+	if (!font.loadFromFile(fontname))
+		throw runtime_error("GameWindow::wordExplaining(): cannot open a font file " + fontname);
+	wstring ws = filesystem::path(dictionary.word_explanation(word)).wstring();
+	wstring backstr = language == Language::UKR ? L"Для виходу на попередній екран натисніть Esc або закрийте вікно" : L"Для выхода на предыдущий экран нажмите Esc или закройте окно";
+	sf::Text text{ ws, font, 16 }, back_text{ backstr, font, 18 };
+	explTextFormatting(window, text, ws);
+	back_text.move(50, window.getSize().y - 100);
+	back_text.setFillColor(sf::Color::Red);
+
+	while (window.isOpen())
+	{
+		sf::Event event;
+		while (window.pollEvent(event))
+			if (event.type == sf::Event::Closed)
+				return;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+			break;
+
+		window.clear(sf::Color::White);
+		window.draw(text);
+		window.draw(back_text);
+		window.display();
+	}
 }
