@@ -23,6 +23,8 @@ class Menu
 	bool three_ls, four_ls;
 	bool school_lvl, normal_lvl, erudite_lvl;
 	const int x = 100, y = 100;
+	void changeLangToUKR();
+	void changeLangToRUS();
 
 public:
 

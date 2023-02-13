@@ -2,12 +2,13 @@
 
 MenuText::MenuText(const string& text) : Text()
 {
-	fontname = "fonts\\Bebas_Neue_Cyrillic.ttf";
+	fontname = "fonts\\Arial.ttf";
 	if (!font.loadFromFile(fontname))
 		throw runtime_error("Game::setGame(): cannot open a font file " + fontname);
 	Text::setFont(font);
 	Text::setString(text);
 	Text::setFillColor(sf::Color::Black);
+	Text::setCharacterSize(18);
 }
 
 void MenuText::setFont(const sf::Font& f)
@@ -34,12 +35,44 @@ Menu::Menu(unsigned int window_width, unsigned int window_height)
 	ru.setPosition(ua.getPosition().x + x / 2, y);
 	lttrs.setPosition(x, 1.5 * y);
 	three.setPosition(ua.getPosition().x, 1.5 * y);
-	four.setPosition(three.getPosition().x + three.getGlobalBounds().width + 30, 1.5 * y);
+	four.setPosition(three.getPosition().x + three.getGlobalBounds().width + x / 3, 1.5 * y);
 	lvl.setPosition(x, 2 * y);
 	school.setPosition(three.getPosition().x, 2 * y);
+	normal.setPosition(school.getPosition().x + school.getGlobalBounds().width + x / 2, 2 * y);
+	erudite.setPosition(normal.getPosition().x + normal.getGlobalBounds().width + x / 2, 2 * y);
+}
+
+
+void Menu::changeLangToUKR()
+{
+	start.setString(L"Старт");
+	lang.setString(L"Мова:");
+	lttrs.setString(L"Літери:");
+	three.setString(L"Три");
+	four.setString(L"Чотири");
+	lvl.setString(L"Рівень:");
+	school.setString(L"Шкільний");
+	normal.setString(L"Нормальний");
+	erudite.setString(L"Ерудит");
 	normal.setPosition(school.getPosition().x + school.getGlobalBounds().width + x / 3, 2 * y);
 	erudite.setPosition(normal.getPosition().x + normal.getGlobalBounds().width + x / 3, 2 * y);
 }
+
+void Menu::changeLangToRUS()
+{
+	start.setString(L"Старт");
+	lang.setString(L"Язык:");
+	lttrs.setString(L"Буквы:");
+	three.setString(L"Три");
+	four.setString(L"Четыре");
+	lvl.setString(L"Уровень:");
+	school.setString(L"Школьный");
+	normal.setString(L"Нормальный");
+	erudite.setString(L"Эрудит");
+	normal.setPosition(school.getPosition().x + school.getGlobalBounds().width + x / 3, 2 * y);
+	erudite.setPosition(normal.getPosition().x + normal.getGlobalBounds().width + x / 3, 2 * y);
+}
+
 
 void Menu::setAllTextBlack()
 {
@@ -86,6 +119,7 @@ void Menu::mouseClickHandling(sf::Vector2i pos)
 		mset.language = Language::UKR;
 		UA_lang = true;
 		RU_lang = false;
+		changeLangToUKR();
 	}
 	if (ru.getGlobalBounds().contains(pos.x, pos.y))
 	{
@@ -93,6 +127,7 @@ void Menu::mouseClickHandling(sf::Vector2i pos)
 		mset.language = Language::RUS;
 		RU_lang = true;
 		UA_lang = false;
+		changeLangToRUS();
 	}
 	if (three.getGlobalBounds().contains(pos.x, pos.y))
 	{
