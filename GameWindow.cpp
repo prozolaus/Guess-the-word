@@ -13,16 +13,16 @@ MenuSettings GameWindow::menu()
 			if (event.type == sf::Event::Closed)
 				close();
 
-		sf::Vector2i pos = sf::Mouse::getPosition(*this);
+		menu.pos = sf::Mouse::getPosition(*this);
 		clear(sf::Color::White);
 		menu.setAllTextBlack();
-		menu.changeColorOnHover(pos);
+		menu.changeColorOnHover();
 
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
 		{
-			if (menu.isStartGame(pos)) 
+			if (menu.isStartGame()) 
 				break;
-			menu.mouseClickHandling(pos);
+			menu.mouseClickHandling();
 		}
 		menu.drawMenu(*this);
 		display();
@@ -46,7 +46,9 @@ void GameWindow::updateTitle(MenuSettings ms)
 	case Level::ERUDITE: lvl = "erudite"; break;
 	default: break;
 	}
-	string title = gname + ": " + lang + " - " + lrs + " - " + lvl;
+	string title = gname + ": " + lang + " - " + lrs;
+	if (ms.guesser == Guesser::PLAYER)
+		title += " - " + lvl;
 	setTitle(title);
 }
 

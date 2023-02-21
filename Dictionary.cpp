@@ -128,13 +128,38 @@ pair<int, int> Dictionary::get_result(const string& pword)
 	return (letters == Letters::THREE ? get_result_for_3_letters(hidden_word, pword) : get_result_for_4_letters(hidden_word, pword));
 }
 
+pair<int, int> Dictionary::get_result(const string& word1, const string& word2)
+{
+	if (word1.size() != (int)letters || word2.size() != (int)letters)
+		throw runtime_error("Dictionary::get_result(word1, word2): Wrong word.size()!");
+	return (letters == Letters::THREE ? get_result_for_3_letters(word1, word2) : get_result_for_4_letters(word1, word2));
+}
+
 bool Dictionary::is_wrong_word(const string& word)
 {
 	return (combined_dict.find(word) != combined_dict.end()) ? false : true;
 }
 
-vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map, 
-	const vector<string>& words_from_history, const vector<char>& hidden_letters, const unsigned int n)
+std::set<string> Dictionary::generate_another_set(const vector<string>& words_from_history, const std::set<char>& hidden_letters)
+{
+	std::set<string> ss;
+	for (const auto& cd : combined_dict)
+	{
+		bool hidletter = false;
+		for (int i = 0; i < cd.first.size() && !hidletter; i++)
+			for (auto chit = hidden_letters.begin(); chit != hidden_letters.end() && !hidletter; ++chit)
+				if (cd.first[i] == *chit)
+					hidletter = true;
+		bool isFromHistory = false;
+		for (auto w : words_from_history) if (w == cd.first) isFromHistory = true;
+		if (!hidletter && !isFromHistory)
+			ss.insert(cd.first);
+	}
+	return ss;
+}
+
+vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map,
+	const vector<string>& words_from_history, const std::set<char>& hidden_letters, const unsigned int n)
 {
 	string s1 = "Dictionary::get_some_words(unordered_map<int, char> map): map ";
 	string s2 = " must be less than word length";
@@ -156,8 +181,8 @@ vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map,
 		{
 			bool hidletter = false;
 			for (int i = 0; i < cd.first.size() && !hidletter; i++)
-				for (int j = 0; j < hidden_letters.size() && !hidletter; j++)
-					if (cd.first[i] == hidden_letters[j])
+				for (auto chit = hidden_letters.begin(); chit != hidden_letters.end() && !hidletter; ++chit)
+					if (cd.first[i] == *chit)
 						hidletter = true;
 			bool isFromHistory = false;
 			for (auto w : words_from_history) if (w == cd.first) isFromHistory = true;
@@ -170,4 +195,34 @@ vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map,
 	if (vs.size() == 0)
 		vs.push_back(language == Language::UKR ? "Не знайдено слів" : "Не найдено слов");
 	return vs;
+}
+
+bool Dictionary::is_set_contain_letters(const std::set<string>& ss, const string& s)  //Does string s contain letters from set?
+{
+	for (string x : ss)
+		for (int i = 0; i < x.size(); i++)
+			for (int j = 0; j < s.size(); j++)
+				if (x[i] == s[j])
+					return true;
+	return false;
+}
+
+std::set<string> Dictionary::generate_set()
+{
+	std::set<string> ss;
+	const int n = letters == Letters::THREE ? 9 : 7;
+	while (ss.size() < n)
+	{
+		ss.clear();
+		random_device rd;
+		mt19937 mersenne{ rd() };
+		for (int i = 0; i < combined_dict.size() && ss.size() < n; i++)
+		{
+			auto iter = combined_dict.begin();
+			advance(iter, mersenne() % combined_dict.size());
+			if (i == 0 || !is_set_contain_letters(ss, iter->first))
+				ss.insert(iter->first);
+		}
+	}
+	return ss;
 }

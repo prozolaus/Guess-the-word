@@ -3,6 +3,7 @@
 #include <string>
 #include <Windows.h>
 #include <unordered_map>
+#include <set>
 #include <algorithm>
 #include <chrono>
 #include <random> 
@@ -55,6 +56,7 @@ class Dictionary
 	void fill_all_dicts();
 	void clear_all_dicts();
 	string get_random_word();
+	bool is_set_contain_letters(const std::set<string>& ss, const string& s);
 
 public:
 	Dictionary(Language lang, Letters lttrs, Level lvl);
@@ -65,6 +67,9 @@ public:
 	void print_words(ostream& os);
 	string word_explanation(const string&);
 	pair<int, int> get_result(const string&);
+	pair<int, int> get_result(const string&, const string&);
 	bool is_wrong_word(const string&);
-	vector<string> get_clue_words(unordered_map<unsigned int, char>, const vector<string>&, const vector<char>&, const unsigned int n = 5);
+	std::set<string> generate_another_set(const vector<string>&, const std::set<char>&);
+	vector<string> get_clue_words(unordered_map<unsigned int, char>, const vector<string>&, const std::set<char>&, const unsigned int n = 5);
+	std::set<string> generate_set();
 };
