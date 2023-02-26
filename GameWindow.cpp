@@ -30,6 +30,23 @@ MenuSettings GameWindow::menu()
 	return menu.getMenuSettings();
 }
 
+//------------------------------------------------------------------------------------------------
+
+void GameWindow::wait(Language lang)
+{
+	string fontname = "fonts\\Academy.ttf";
+	sf::Font font;
+	font.loadFromFile(fontname);
+	if (!font.loadFromFile(fontname))
+		throw runtime_error("GameWindow::wait(): cannot open a font file " + fontname);
+	clear(sf::Color::White);
+	wstring phrase = lang == Language::UKR ? L"Будь ласка, зачекайте!" : L"Пожалуйста, подождите!";
+	sf::Text text{ phrase, font, 30 };
+	text.setPosition(getSize().x / 2 - text.getGlobalBounds().width / 2, getSize().y / 2);
+	text.setFillColor(sf::Color::Red);
+	draw(text);
+	display();
+}
 
 //------------------------------------------------------------------------------------------------
 
@@ -64,6 +81,8 @@ void GameWindow::runGame()
 			ms = menu();
 			updateTitle(ms);
 		}
+		if (ms.guesser == Guesser::COMPUTER && ms.letters == Letters::FOUR)
+			wait(ms.language);
 		Game game{ ms };
 		restart = game.play(*this);
 	}
