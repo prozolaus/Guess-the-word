@@ -44,6 +44,7 @@ public:
 
 class Game
 {
+	sf::Vector2u window_size;
 	const int alphabet_size;
 	Dictionary dictionary;
 	Language language;
@@ -59,7 +60,7 @@ class Game
 	std::vector<MyRectangleShape> rectangles, result_rects;
 	MyLetterSprite* myspr = nullptr;
 	sf::CircleShape dot1, dot2;
-	sf::Text result_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
+	sf::Text word_text, result_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
 	vector<sf::Text> history, clues;
 	sf::Font font;
 	string word;
@@ -91,7 +92,7 @@ class Game
 	void updateClueWords();
 	void hideClues();
 	void nextWordFromSet();
-	void fillSet();
+	void updateSet();
 
 	void oneTimeLeftActions();
 	void oneTimeRightActions();
@@ -100,6 +101,6 @@ class Game
 	void wordExplaining(sf::RenderWindow& window);
 
 public:
-	Game(MenuSettings);
+	Game(MenuSettings, sf::Vector2u);
 	bool play(sf::RenderWindow& window);
 };

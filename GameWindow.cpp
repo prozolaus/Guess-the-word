@@ -2,17 +2,28 @@
 
 //------------------------------------------------------------------------------------------------
 
+GameWindow::GameWindow(sf::VideoMode vm, const sf::String wndwname) 
+	: sf::RenderWindow(vm, wndwname)
+{
+	restart = false;
+	startSize.x = vm.width;
+	startSize.y = vm.height;
+	windowname = wndwname;
+}
+
+//------------------------------------------------------------------------------------------------
+
 MenuSettings GameWindow::menu()
 {
 	Menu menu(getSize().x, getSize().y);
 
 	while (isOpen())
 	{
+		setStartSize();
 		sf::Event event;
 		while (pollEvent(event))
 			if (event.type == sf::Event::Closed)
 				close();
-
 		menu.pos = sf::Mouse::getPosition(*this);
 		clear(sf::Color::White);
 		menu.setAllTextBlack();
@@ -52,7 +63,6 @@ void GameWindow::wait(Language lang)
 
 void GameWindow::updateTitle(MenuSettings ms)
 {
-	string gname = "Guess the word";
 	string lang = (ms.language == Language::UKR) ? "UKR" : "RUS";
 	string lrs = (ms.letters == Letters::THREE) ? "3" : "4";
 	string lvl;
@@ -63,7 +73,7 @@ void GameWindow::updateTitle(MenuSettings ms)
 	case Level::ERUDITE: lvl = "erudite"; break;
 	default: break;
 	}
-	string title = gname + ": " + lang + " - " + lrs;
+	string title = windowname + ": " + lang + " - " + lrs;
 	if (ms.guesser == Guesser::PLAYER)
 		title += " - " + lvl;
 	setTitle(title);
@@ -83,7 +93,7 @@ void GameWindow::runGame()
 		}
 		if (ms.guesser == Guesser::COMPUTER && ms.letters == Letters::FOUR)
 			wait(ms.language);
-		Game game{ ms };
+		Game game{ ms, getStartSize()};
 		restart = game.play(*this);
 	}
 }

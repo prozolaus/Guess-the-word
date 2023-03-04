@@ -1,7 +1,8 @@
 #include "Game.h"
 
-Game::Game(MenuSettings ms)
-	: alphabet_size{ 33 },
+Game::Game(MenuSettings ms, sf::Vector2u wndw_size)
+	: window_size { wndw_size },
+	alphabet_size{ 33 },
 	dictionary{ ms.language, ms.letters, ms.level },
 	language{ ms.language },
 	letters{ ms.letters },
@@ -22,7 +23,7 @@ Game::Game(MenuSettings ms)
 	setGame();
 	if (guesser == Guesser::COMPUTER)
 	{
-		strset = dictionary.generate_set();
+		strset = dictionary.generate_first_set();
 		nextWordFromSet();
 	}
 }
@@ -106,6 +107,11 @@ void Game::setText()
 	if (guesser == Guesser::PLAYER)
 		clword = language == Language::UKR ? L"Підказка" : L"Подсказка";
 	wstring explword = language == Language::UKR ? L"Показати тлумачення слова" : L"Показать толкование слова";
+	word_text.setFont(font);
+	word_text.setFillColor(sf::Color::Blue);
+	word_text.move(20, 465);
+	word_text.setString(L"Слово:");
+	word_text.setCharacterSize(28);
 	result_text.setFont(font);
 	result_text.setFillColor(sf::Color::Blue);
 	result_text.move(20, 565);
@@ -190,6 +196,7 @@ void Game::drawAll(sf::RenderWindow& window)
 	for (int i = 0; i < history.size(); i++)
 		window.draw(history[i]);
 
+	window.draw(word_text);
 	window.draw(result_text);
 	window.draw(menu_text);
 	window.draw(clue_text);
@@ -391,6 +398,7 @@ bool Game::play(sf::RenderWindow& window)
 {
 	while (window.isOpen())
 	{
+		window.setSize(window_size);	//sets start window size when user tries to change it
 		pixelPos = sf::Mouse::getPosition(window);
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -428,22 +436,6 @@ bool Game::play(sf::RenderWindow& window)
 		window.clear(sf::Color::White);
 		drawAll(window);
 		window.display();
-	}
-}
-
-//------------------------------------------------------------------------------------------------
-
-void Game::fillSet()
-{
-	std::set<string> ss = dictionary.generate_another_set(history_vs, hidden_letters);
-	for (const string& s : ss)
-	{
-		int cnt = 0;
-		for (auto cw : comp_words)
-			if (dictionary.get_result(s, cw.first) == cw.second)
-				cnt++;
-		if (cnt == comp_words.size())
-			strset.insert(s);
 	}
 }
 
@@ -498,7 +490,7 @@ void Game::oneTimeLeftActions()
 				}
 			}
 			if (isEmptyFirstSet)
-				fillSet();
+				updateSet();
 			nextWordFromSet();
 		}
 	}
@@ -626,14 +618,23 @@ void Game::nextWordFromSet()
 		for (int j = 0; j < sprites.size(); j++)
 			if (sprites[j].getLetter() == word[i])
 				sprites[j].setPosition(rectangles[i].getPosition().x, rectangles[i].getPosition().y);
-	
-	SetConsoleCP(1251);
-	SetConsoleOutputCP(1251);
-	cout << endl << endl;
-	for (const string& s : strset)
-		cout << s << endl << endl;
-	cout << boolalpha << isEmptyFirstSet << endl;
-	cout << firstsetcount << endl;
-	cout << fncount << endl;
-	
 }
+
+//------------------------------------------------------------------------------------------------
+
+void Game::updateSet()
+{
+	strset.clear();
+	std::set<string> ss = dictionary.generate_another_set(history_vs, hidden_letters);
+	for (const string& s : ss)
+	{
+		int cnt = 0;
+		for (auto cw : comp_words)
+			if (dictionary.get_result(s, cw.first) == cw.second)
+				cnt++;
+		if (cnt == comp_words.size())
+			strset.insert(s);
+	}
+}
+
+//------------------------------------------------------------------------------------------------
