@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include "Dictionary.h"
-
 
 //----------------------------------------------------------------------------------------------------
 
@@ -21,8 +21,8 @@ public:
 class MyLetterSprite : public sf::Sprite
 {
 	using Sprite::Sprite;
-	char letter;
-	int number;
+	char letter = ' ';
+	int number = -1;
 	bool hiding = false;
 	MyRectangleShape* rec = nullptr;
 	sf::Vector2i startpos;
@@ -50,32 +50,45 @@ class Game
 	Language language;
 	Letters letters;
 	Guesser guesser;
-	int word_size;
-	bool motion, hiding;
+	const int sprite_size;
+	int word_size, fncount, firstsetcount;
+	bool motion, hiding, isEmptyFirstSet, noOptions, gameover;
 	float dX, dY;
 	sf::Vector2i pixelPos;
-	sf::Color bgcolor, hidcolor;
+	sf::Color defsprcolor, bgcolor, hidcolor, wincolor;
 	std::vector<sf::Texture> textures, result_textures;
-	std::vector<MyLetterSprite> sprites, result_sprites, result_sprites2;
-	std::vector<MyRectangleShape> rectangles, result_rects;
-	MyLetterSprite* myspr = nullptr;
-	sf::CircleShape dot1, dot2;
-	sf::Text word_text, result_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
-	vector<sf::Text> history, clues;
-	sf::Font font;
-	string word;
+	MyLetterSprite* myspr;
 	pair<int, int> result;
-	int fncount, firstsetcount;
+	string word, winword;
+	std::vector<MyLetterSprite> letter_sprites;
+	std::pair<std::vector<MyLetterSprite>, std::vector<MyLetterSprite>> result_sprites;
+	std::vector<MyRectangleShape> letter_rectangles, result_rectangles;
+	sf::CircleShape dot1, dot2;
+	sf::Texture winimagetexture;
+	sf::Sprite winimagesprite;
+	sf::SoundBuffer winsoundbuffer;
+	sf::Sound winsound;
+	sf::Font font, font2;
+	sf::Text word_text, result_text, up_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
+	vector<sf::Text> history, clues;
 	vector<string> history_vs, clue_words;
 	set<char> hidden_letters;
 	set<string> strset;
-	bool isEmptyFirstSet, noOptions;
 	unordered_map<string, pair<int, int>> comp_words;
+
 	void setGame();
-	void setText();
+	void setImages();
+	void setSounds();
+	void setTextures();
+	void setLetterSprites();
+	void setLetterRectangles();
+	void setResultSprites(std::vector<MyLetterSprite>&, int);
 	void setResultRect(sf::RectangleShape& rect, float x);
 	void setResultDot(sf::CircleShape& dot, int y);
+	void setFonts();
+	void setText();
 	void lettersInit();
+
 	bool allRectanglesFull();
 	void drawAll(sf::RenderWindow& window);
 	bool isAnySpriteContainMousePos();
@@ -84,15 +97,19 @@ class Game
 	void moveSprite();
 	void setSpriteHidingOptions();
 	void resetResultSprites();
-	void resetSprites();
+	void resetLetterSprites();
 	void resetRectangleLetters();
 	void resetResultRectNumbers();
+	void resetAfterArrowClick();
 	void addWordToHistory();
 	void resultHandling();
+	bool isWinwordContainLetter(char);
+	void winHandling();
 	void updateClueWords();
 	void hideClues();
 	void nextWordFromSet();
 	void updateSet();
+	void compGuessing();
 
 	void oneTimeLeftActions();
 	void oneTimeRightActions();

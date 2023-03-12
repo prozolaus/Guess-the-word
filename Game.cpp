@@ -1,24 +1,23 @@
-#include "Game.h"
+ï»¿#include "Game.h"
 
 Game::Game(MenuSettings ms, sf::Vector2u wndw_size)
-	: window_size { wndw_size },
+	: window_size{ wndw_size },
 	alphabet_size{ 33 },
 	dictionary{ ms.language, ms.letters, ms.level },
 	language{ ms.language },
 	letters{ ms.letters },
 	guesser{ ms.guesser },
-	word_size{int(letters)},
-	motion{ false }, hiding{ false },
+	sprite_size{ 64 },
+	word_size{ int(letters) }, fncount{ 0 }, firstsetcount{ 0 },
+	motion{ false }, hiding{ false }, isEmptyFirstSet{ false }, noOptions{ false }, gameover{ false },
 	dX{ 0 }, dY{ 0 },
+	pixelPos{ 0, 0 },
+	defsprcolor{ sf::Color::White }, bgcolor{ sf::Color{ 255,255,250 } }, hidcolor{ sf::Color{ 255,255,255,45 } }, wincolor{ sf::Color{ 153,255,204 } },
 	textures{ alphabet_size },
 	result_textures{ word_size + 1 },
-	bgcolor{sf::Color::White},
-	hidcolor{ sf::Color{ 255,255,255,45 } },
-	result{make_pair(-1,-1)},
-	fncount{0},
-	firstsetcount{0},
-	isEmptyFirstSet{ false },
-	noOptions{ false }
+	myspr{ nullptr },
+	result{ make_pair(-1,-1) },
+	word(word_size, ' ')
 {
 	setGame();
 	if (guesser == Guesser::COMPUTER)
@@ -30,57 +29,89 @@ Game::Game(MenuSettings ms, sf::Vector2u wndw_size)
 
 void Game::setGame()
 {
-	int shift = guesser == Guesser::PLAYER ? 0 : 400;
-	word.resize(word_size, ' ');
+	setTextures();
+	setLetterSprites();
+	setLetterRectangles();
+	setResultSprites(result_sprites.first, 166);
+	setResultSprites(result_sprites.second, 262);
+	result_rectangles.assign(2, MyRectangleShape{ sf::Vector2f(sprite_size, sprite_size) });
+	setResultRect(result_rectangles[0], 166.f);
+	setResultRect(result_rectangles[1], 262.f);
+	setResultDot(dot1, 570.f);
+	setResultDot(dot2, 590.f);
+	setFonts();
+	setText();
+	lettersInit();
+	setImages();
+	setSounds();
+}
+
+void Game::setImages()
+{
+	string winimgname = "images\\firework.jpg";
+	if (!winimagetexture.loadFromFile(winimgname))
+		throw runtime_error("Game::setGame(): Cannot open an image file " + winimgname);
+	winimagesprite.setTexture(winimagetexture);
+	winimagesprite.move(20, 20);
+}
+
+void Game::setSounds()
+{
+	string winsoundname = "sounds\\winning-chimes.wav";
+	if (!winsoundbuffer.loadFromFile(winsoundname))
+		throw runtime_error("Game::setGame(): Cannot open an image file " + winsoundname);
+	winsound.setBuffer(winsoundbuffer);
+}
+
+void Game::setTextures()
+{
 	for (int i = 0; i < alphabet_size; i++)
 	{
 		string lng = language == Language::UKR ? "ukr\\" : "rus\\";
 		string s = "letters\\" + lng + std::to_string(i) + ".png";
 		textures[i].loadFromFile(s);
 	}
+	for (int i = 0; i <= word_size; i++)
+	{
+		std::string s = "numbers\\" + std::to_string(i) + ".png";
+		result_textures[i].loadFromFile(s);
+	}
+}
+
+void Game::setLetterSprites()
+{
+	int shift = guesser == Guesser::PLAYER ? 0 : 400;
 	for (int i = 0, count = 0; i < 6; i++)
 		for (int j = 0; j < 6; j++)
 		{
 			if (count == alphabet_size)
 				break;
-			sprites.push_back(MyLetterSprite{ textures[count++] });
-			sprites.back().setStartCoords(j * 64 - shift, i * 64);
+			letter_sprites.push_back(MyLetterSprite{ textures[count++] });
+			letter_sprites.back().setStartCoords(j * sprite_size - shift, i * sprite_size);
 		}
-	result_rects.assign(2, MyRectangleShape{ sf::Vector2f(64.f, 64.f) });
-	rectangles.assign(word_size, MyRectangleShape{ sf::Vector2f(64.f, 64.f) });
-	for (int i = 0, xr = letters == Letters::THREE ? 150 : 118; i < rectangles.size(); i++)
-	{
-		rectangles[i].setFillColor(sf::Color(175, 180, 240));
-		rectangles[i].move(xr + i * 64, 450);
-		rectangles[i].setOutlineColor(sf::Color::Black);
-		rectangles[i].setOutlineThickness(1.f);
-	}
-	shift = guesser == Guesser::PLAYER ? 400 : 0;
-	for (int i = 0; i <= word_size; i++)
-	{
-		std::string s = "numbers\\" + std::to_string(i) + ".png";
-		result_textures[i].loadFromFile(s);
-		result_sprites.push_back(MyLetterSprite{ result_textures[i] });
-		result_sprites.back().setStartCoords(-shift + 166, (word_size - i) * 64 + 64);
-		result_sprites.back().setNumber(i);
-		result_sprites2.push_back(MyLetterSprite{ result_textures[i] });
-		result_sprites2.back().setStartCoords(-shift + 262, (word_size - i) * 64 + 64);
-		result_sprites2.back().setNumber(i);
-	}
-	setResultRect(result_rects[0], 166.f);
-	setResultRect(result_rects[1], 262.f);
-	setResultDot(dot1, 570.f);
-	setResultDot(dot2, 590.f);
-	setText();
-	lettersInit();
 }
 
-void Game::setResultDot(sf::CircleShape& dot, int y)
+void Game::setLetterRectangles()
 {
-	dot.setRadius(3);
-	dot.setPosition(243, y);
-	dot.setFillColor(sf::Color{ 220,220,220 });
-	dot.setOutlineThickness(1);
+	letter_rectangles.assign(word_size, MyRectangleShape{ sf::Vector2f(sprite_size, sprite_size) });
+	for (int i = 0, xr = letters == Letters::THREE ? 150 : 118; i < letter_rectangles.size(); i++)
+	{
+		letter_rectangles[i].setFillColor(sf::Color(175, 180, 240));
+		letter_rectangles[i].move(xr + i * sprite_size, 450);
+		letter_rectangles[i].setOutlineColor(sf::Color::Black);
+		letter_rectangles[i].setOutlineThickness(1.f);
+	}
+}
+
+void Game::setResultSprites(std::vector<MyLetterSprite>& rsprites, int x)
+{
+	int shift = guesser == Guesser::PLAYER ? 400 : 0;
+	for (int i = 0; i <= word_size; i++)
+	{
+		rsprites.push_back(MyLetterSprite{ result_textures[i] });
+		rsprites.back().setStartCoords(x - shift, (word_size - i) * sprite_size + sprite_size);
+		rsprites.back().setNumber(i);
+	}
 }
 
 void Game::setResultRect(sf::RectangleShape& rect, float x)
@@ -91,60 +122,87 @@ void Game::setResultRect(sf::RectangleShape& rect, float x)
 	rect.setOutlineThickness(1.f);
 }
 
+void Game::setResultDot(sf::CircleShape& dot, int y)
+{
+	dot.setRadius(3);
+	dot.setPosition(243, y);
+	dot.setFillColor(sf::Color{ 220,220,220 });
+	dot.setOutlineThickness(1);
+}
+
+void Game::setFonts()
+{
+	string fontname = "fonts\\Academy.ttf", fontname2 = "fonts\\Arial.ttf", er = "Game::setGame(): cannot open a font file ";
+	if (!font.loadFromFile(fontname))
+		throw runtime_error(er + fontname);
+	if (!font2.loadFromFile(fontname2))
+		throw runtime_error(er + fontname2);
+}
+
 void Game::setText()
 {
-	string fontname = "fonts\\Academy.ttf";
-	if (!font.loadFromFile(fontname))
-		throw runtime_error("Game::setGame(): cannot open a font file " + fontname);
-
-	wstring congrats = language == Language::UKR ? L"Ïåðåìîãà!" : L"Ïîáåäà!";
+	wstring congrats = language == Language::UKR ? L"ÐŸÐµÑ€ÐµÐ¼Ð¾Ð³Ð°!" : L"ÐŸÐ¾Ð±ÐµÐ´Ð°!";
 	wstring wrword;
 	if (guesser == Guesser::PLAYER)
-		wrword = language == Language::UKR ? L"Òàêîãî ñëîâà íåìàº â áàç³ äàíèõ ãðè!" : L"Òàêîãî ñëîâà íåò â áàçå äàííûõ èãðû!";
-	else 
-		wrword = language == Language::UKR ? L"Äðóãà öèôðà íå ìîæå áóòè á³ëüøå ïåðøî¿!" : L"Âòîðàÿ öèôðà íå ìîæåò áûòü áîëüøå ïåðâîé!";
+		wrword = language == Language::UKR ? L"Ð¢Ð°ÐºÐ¾Ð³Ð¾ ÑÐ»Ð¾Ð²Ð° Ð½ÐµÐ¼Ð°Ñ” Ð² Ð±Ð°Ð·Ñ– Ð´Ð°Ð½Ð¸Ñ… Ð³Ñ€Ð¸!" : L"Ð¢Ð°ÐºÐ¾Ð³Ð¾ ÑÐ»Ð¾Ð²Ð° Ð½ÐµÑ‚ Ð² Ð±Ð°Ð·Ðµ Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð¸Ð³Ñ€Ñ‹!";
+	else
+		wrword = language == Language::UKR ? L"Ð”Ñ€ÑƒÐ³Ð° Ñ†Ð¸Ñ„Ñ€Ð° Ð½Ðµ Ð¼Ð¾Ð¶Ðµ Ð±ÑƒÑ‚Ð¸ Ð±Ñ–Ð»ÑŒÑˆÐµ Ð¿ÐµÑ€ÑˆÐ¾Ñ—!" : L"Ð’Ñ‚Ð¾Ñ€Ð°Ñ Ñ†Ð¸Ñ„Ñ€Ð° Ð½Ðµ Ð¼Ð¾Ð¶ÐµÑ‚ Ð±Ñ‹Ñ‚ÑŒ Ð±Ð¾Ð»ÑŒÑˆÐµ Ð¿ÐµÑ€Ð²Ð¾Ð¹!";
 	wstring clword;
 	if (guesser == Guesser::PLAYER)
-		clword = language == Language::UKR ? L"Ï³äêàçêà" : L"Ïîäñêàçêà";
-	wstring explword = language == Language::UKR ? L"Ïîêàçàòè òëóìà÷åííÿ ñëîâà" : L"Ïîêàçàòü òîëêîâàíèå ñëîâà";
+		clword = language == Language::UKR ? L"ÐŸÑ–Ð´ÐºÐ°Ð·ÐºÐ°" : L"ÐŸÐ¾Ð´ÑÐºÐ°Ð·ÐºÐ°";
+	wstring explword = language == Language::UKR ? L"ÐŸÐ¾ÐºÐ°Ð·Ð°Ñ‚Ð¸ Ñ‚Ð»ÑƒÐ¼Ð°Ñ‡ÐµÐ½Ð½Ñ ÑÐ»Ð¾Ð²Ð°" : L"ÐŸÐ¾ÐºÐ°Ð·Ð°Ñ‚ÑŒ Ñ‚Ð¾Ð»ÐºÐ¾Ð²Ð°Ð½Ð¸Ðµ ÑÐ»Ð¾Ð²Ð°";
+
 	word_text.setFont(font);
 	word_text.setFillColor(sf::Color::Blue);
 	word_text.move(20, 465);
-	word_text.setString(L"Ñëîâî:");
+	word_text.setString(L"Ð¡Ð»Ð¾Ð²Ð¾:");
 	word_text.setCharacterSize(28);
+
 	result_text.setFont(font);
 	result_text.setFillColor(sf::Color::Blue);
 	result_text.move(20, 565);
-	result_text.setString(L"Ðåçóëüòàò:");
+	result_text.setString(L"Ð ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚:");
 	result_text.setCharacterSize(28);
+
+	up_text.setFont(font2);
+	up_text.setFillColor(bgcolor);
+	up_text.move(letter_rectangles.back().getPosition().x + letter_rectangles.back().getGlobalBounds().width + 10, 445);
+	up_text.setString(L"â†‘");
+	up_text.setCharacterSize(50);
+
 	win_text.setFont(font);
 	win_text.setFillColor(bgcolor);
 	win_text.move(350, 555);
 	win_text.setString(congrats);
 	win_text.setCharacterSize(40);
+
 	menu_text.setFont(font);
 	menu_text.setFillColor(sf::Color::Black);
 	menu_text.move(620, 20);
-	menu_text.setString(L"Ìåíþ");
+	menu_text.setString(L"ÐœÐµÐ½ÑŽ");
 	menu_text.setCharacterSize(24);
+
 	wrong_action_text.setFont(font);
 	wrong_action_text.setCharacterSize(20);
 	wrong_action_text.setFillColor(bgcolor);
 	wrong_action_text.move(20, 400);
 	wrong_action_text.setString(wrword);
+
 	word_expl_text.setFont(font);
 	word_expl_text.move(20, 650);
 	word_expl_text.setString(explword);
 	word_expl_text.setCharacterSize(24);
+
 	clue_text.setFont(font);
 	clue_text.move(600, 660);
 	clue_text.setString(clword);
 	clue_text.setCharacterSize(20);
 	clue_text.setFillColor(sf::Color::Black);
+
 	restart_text.setFont(font);
 	restart_text.setFillColor(sf::Color::Black);
 	restart_text.move(620, 60);
-	restart_text.setString(L"Ðåñòàðò");
+	restart_text.setString(L"Ð ÐµÑÑ‚Ð°Ñ€Ñ‚");
 	restart_text.setCharacterSize(22);
 }
 
@@ -155,36 +213,38 @@ void Game::lettersInit()
 		for (int i = 0; i < alphabet_size; i++)
 		{
 			if (i == 4)
-				sprites[i].setLetter(char(-76));	//´
+				letter_sprites[i].setLetter(char(-76));	//Ò‘
 			else if (i == 7)
-				sprites[i].setLetter(char(-70));	//º
+				letter_sprites[i].setLetter(char(-70));	//Ñ”
 			else if (i == 11)
-				sprites[i].setLetter(char(-77));	//³
+				letter_sprites[i].setLetter(char(-77));	//Ñ–
 			else if (i == 12)
-				sprites[i].setLetter(char(-65));	//¿
+				letter_sprites[i].setLetter(char(-65));	//Ñ—
 			else if (i == 30)
-				sprites[i].setLetter(char(-4));	//ü
+				letter_sprites[i].setLetter(char(-4));	//ÑŒ
 			else if (i == 31)
-				sprites[i].setLetter(char(-2));	//þ
+				letter_sprites[i].setLetter(char(-2));	//ÑŽ
 			else if (i == 32)
-				sprites[i].setLetter(char(-1));	//ÿ
+				letter_sprites[i].setLetter(char(-1));	//Ñ
 			else
-				sprites[i].setLetter(char(count++));
+				letter_sprites[i].setLetter(char(count++));
 		}
 	else if (language == Language::RUS)
 		for (int i = 0; i < alphabet_size; i++)
 		{
 			if (i == 6)
-				sprites[i].setLetter(char(-72));	//¸
+				letter_sprites[i].setLetter(char(-72));	//Ñ‘
 			else
-				sprites[i].setLetter(char(count++));
+				letter_sprites[i].setLetter(char(count++));
 		}
 }
+
+//-------------------------------------------------------------------------------------
 
 bool Game::allRectanglesFull()
 {
 	std::vector<MyRectangleShape>* vspr = nullptr;
-	vspr = guesser == Guesser::PLAYER ? &rectangles : &result_rects;
+	vspr = guesser == Guesser::PLAYER ? &letter_rectangles : &result_rectangles;
 	for (int i = 0; i < vspr->size(); i++)
 		if (vspr->at(i).getFilling() == false)
 			return false;
@@ -198,6 +258,7 @@ void Game::drawAll(sf::RenderWindow& window)
 
 	window.draw(word_text);
 	window.draw(result_text);
+	window.draw(up_text);
 	window.draw(menu_text);
 	window.draw(clue_text);
 	window.draw(win_text);
@@ -207,33 +268,35 @@ void Game::drawAll(sf::RenderWindow& window)
 	window.draw(dot1);
 	window.draw(dot2);
 
-	window.draw(result_rects[0]);
-	window.draw(result_rects[1]);
+	window.draw(result_rectangles[0]);
+	window.draw(result_rectangles[1]);
 
 	for (int i = 0; i < clues.size(); i++)
 		window.draw(clues[i]);
 
-	for (int i = 0; i < rectangles.size(); i++)
-		window.draw(rectangles[i]);
+	for (int i = 0; i < letter_rectangles.size(); i++)
+		window.draw(letter_rectangles[i]);
 
-	for (int i = sprites.size() - 1; i >= 0; i--)
-		window.draw(sprites[i]);
+	for (int i = letter_sprites.size() - 1; i >= 0; i--)
+		window.draw(letter_sprites[i]);
 
-	for (int i = 0; i < result_sprites.size(); i++)
+	for (int i = 0; i < result_sprites.first.size(); i++)
 	{
-		window.draw(result_sprites[i]);
-		window.draw(result_sprites2[i]);
+		window.draw(result_sprites.first[i]);
+		window.draw(result_sprites.second[i]);
 	}
+	if (gameover)
+		window.draw(winimagesprite);
 }
 
 bool Game::isAnySpriteContainMousePos()
 {
 	std::vector<MyLetterSprite>* vspr = nullptr;
-	vspr = guesser == Guesser::PLAYER ? &sprites : &result_sprites;
+	vspr = guesser == Guesser::PLAYER ? &letter_sprites : &result_sprites.first;
 	const int n = guesser == Guesser::PLAYER ? 1 : 2;
 	for (int k = 1; k <= n; k++)
-	{ 
-		if (k == 2)	vspr = &result_sprites2;
+	{
+		if (k == 2)	vspr = &result_sprites.second;
 		for (int i = 0; i < vspr->size(); i++)
 			if (vspr->at(i).getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 			{
@@ -249,9 +312,9 @@ bool Game::isAnySpriteContainMousePos()
 bool Game::isAnySpriteinRect()
 {
 	std::vector<MyRectangleShape>* vrects = nullptr;
-	vrects = guesser == Guesser::PLAYER ? &rectangles : &result_rects;
+	vrects = guesser == Guesser::PLAYER ? &letter_rectangles : &result_rectangles;
 	motion = false;
-	myspr->setColor(sf::Color::White);
+	myspr->setColor(defsprcolor);
 	if (guesser == Guesser::PLAYER && myspr->getLetterHiding())
 		myspr->setColor(hidcolor);
 	int i = 0;
@@ -282,13 +345,14 @@ void Game::resetCurrentSprite()
 
 void Game::moveSprite()
 {
-	myspr->setColor(sf::Color::Green);
+	int transparency = myspr->getLetterHiding() ? 45 : 255;
+	myspr->setColor(sf::Color{0, 255, 0, sf::Uint8(transparency)});
 	myspr->setPosition(pixelPos.x - dX, pixelPos.y - dY);
 }
 
 void Game::setSpriteHidingOptions()
 {
-	(myspr->getColor() == sf::Color::White) ? myspr->setColor(hidcolor) : myspr->setColor(sf::Color::White);
+	(myspr->getColor() == defsprcolor) ? myspr->setColor(hidcolor) : myspr->setColor(defsprcolor);
 	if (myspr->getLetterHiding())
 	{
 		myspr->setLetterHiding(false);
@@ -304,63 +368,104 @@ void Game::setSpriteHidingOptions()
 
 void Game::resetResultSprites()
 {
-	for (int i = 0; i < result_sprites.size(); i++)
+	for (int i = 0; i < result_sprites.first.size(); i++)
 	{
-		result_sprites[i].setStartPosition();
-		result_sprites2[i].setStartPosition();
+		result_sprites.first[i].setStartPosition();
+		result_sprites.second[i].setStartPosition();
 	}
 }
 
-void Game::resetSprites()
+void Game::resetLetterSprites()
 {
-	for (int i = 0; i < sprites.size(); i++)
-		sprites[i].setStartPosition();
+	for (int i = 0; i < letter_sprites.size(); i++)
+		letter_sprites[i].setStartPosition();
 }
 
 void Game::resetRectangleLetters()
 {
-	for (int i = 0; i < rectangles.size(); i++)
-		if (!rectangles[i].getFilling())
+	for (int i = 0; i < letter_rectangles.size(); i++)
+		if (!letter_rectangles[i].getFilling())
 			word.at(i) = ' ';
 }
 
 void Game::resetResultRectNumbers()
 {
-	if (!result_rects[0].getFilling())
-			result.first = -1;
-	if (!result_rects[1].getFilling())
+	if (!result_rectangles[0].getFilling())
+		result.first = -1;
+	if (!result_rectangles[1].getFilling())
 		result.second = -1;
+}
+
+void Game::resetAfterArrowClick()
+{
+	resetLetterSprites();
+	resetResultSprites();
+	for (int i = 0; i < letter_rectangles.size(); i++)
+		letter_rectangles[i].setFilling(false);
+	resetRectangleLetters();
 }
 
 void Game::addWordToHistory()
 {
-	history_vs.push_back(word);
-	string s{ word + " - " + to_string(result.first) + ":" + to_string(result.second) };
-	sf::Text t{ filesystem::path(s).wstring(), font, 22 };
-	history.push_back(t);
-	history.back().setPosition(470, history.size() * 24);
-	history.back().setFillColor(sf::Color::Blue);
-	if (history.size() > 1 && history[history.size() - 2].getString() == t.getString())
-		history.pop_back();
+	if (find(history_vs.begin(), history_vs.end(), word) == history_vs.end())
+	{
+		history_vs.push_back(word);
+		string s{ word + " - " + to_string(result.first) + ":" + to_string(result.second) };
+		sf::Text t{ filesystem::path(s).wstring(), font, 22 };
+		history.push_back(t);
+		history.back().setPosition(470, history.size() * 24);
+		history.back().setFillColor(sf::Color::Blue);
+	}
 }
 
 void Game::resultHandling()
 {
 	result = dictionary.get_result(word);
-	result_sprites[result.first].setPosition(result_rects[0].getPosition());
-	result_sprites2[result.second].setPosition(result_rects[1].getPosition());
+	result_sprites.first[result.first].setPosition(result_rectangles[0].getPosition());
+	result_sprites.second[result.second].setPosition(result_rectangles[1].getPosition());
 	addWordToHistory();
 	if (result.first == word_size && result.second == word_size)
-		win_text.setFillColor(sf::Color::Magenta);
+		winHandling();
 	else if (result.first == 0 && result.second == 0)
-		for (int i = 0; i < sprites.size(); i++)
-			if (sprites[i].getConnectedRectangle())
+		for (int i = 0; i < letter_sprites.size(); i++)
+			if (letter_sprites[i].getConnectedRectangle())
 			{
-				myspr = &sprites[i];
-				myspr->setColor(sf::Color::White);
+				myspr = &letter_sprites[i];
+				myspr->setColor(defsprcolor);
 				setSpriteHidingOptions();
+				myspr->connectRectangle(nullptr);
 				myspr = nullptr;
 			}
+}
+
+bool Game::isWinwordContainLetter(char l)
+{
+	for (char ch : winword)
+		if (ch == l)
+			return true;
+	return false;
+}
+
+void Game::winHandling()
+{
+	win_text.setFillColor(sf::Color::Magenta);
+	winword = word;
+	gameover = true;
+	up_text.setPosition(-sprite_size, -sprite_size);
+	clue_text.setPosition(-sprite_size, -sprite_size);
+	for (int i = 0; i < letter_sprites.size(); i++)
+		if (!isWinwordContainLetter(letter_sprites[i].getLetter()))
+			letter_sprites[i].setStartCoords(-sprite_size, -sprite_size);
+		else
+			letter_sprites[i].setStartCoords(letter_sprites[i].getPosition().x, letter_sprites[i].getPosition().y);
+	for (int i = 0; i < result_sprites.first.size(); i++)
+	{
+		result_sprites.first[i].setStartCoords(-sprite_size, -sprite_size);
+		result_sprites.second[i].setStartCoords(-sprite_size, -sprite_size);
+	}
+	result_sprites.first[result.first].setStartCoords(result_rectangles[0].getPosition().x, result_rectangles[0].getPosition().y);
+	result_sprites.second[result.second].setStartCoords(result_rectangles[1].getPosition().x, result_rectangles[1].getPosition().y);
+	winsound.play();
 }
 
 void Game::updateClueWords()
@@ -388,7 +493,7 @@ void Game::updateClueWords()
 void Game::hideClues()
 {
 	for (sf::Text& c : clues)
-		c.setFillColor(bgcolor);
+		c.setFillColor(!gameover ? bgcolor : wincolor);
 }
 
 //------------------------------------------------------------------------------
@@ -414,17 +519,19 @@ bool Game::play(sf::RenderWindow& window)
 						return true;
 					else if (clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 						updateClueWords();
-					else if (isAnySpriteContainMousePos())
+					else if (up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+						resetAfterArrowClick();
+					else if (!gameover && isAnySpriteContainMousePos())
 						motion = true;
 
 				if (event.key.code == sf::Mouse::Right)
-					if (isAnySpriteContainMousePos())
+					if (!gameover && isAnySpriteContainMousePos())
 						hiding = true;
 			}
 			if (event.type == sf::Event::MouseButtonReleased)
 			{
 				if (event.key.code == sf::Mouse::Left && word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
-					if (allRectanglesFull() && !dictionary.is_wrong_word(word) || guesser == Guesser::COMPUTER) 
+					if (guesser == Guesser::COMPUTER || allRectanglesFull() && !dictionary.is_wrong_word(word))
 						wordExplaining(window);
 				if (event.key.code == sf::Mouse::Left && motion)
 					oneTimeLeftActions();
@@ -433,7 +540,7 @@ bool Game::play(sf::RenderWindow& window)
 			}
 		}
 		actions();
-		window.clear(sf::Color::White);
+		window.clear(!gameover ? bgcolor : wincolor);
 		drawAll(window);
 		window.display();
 	}
@@ -455,45 +562,7 @@ void Game::oneTimeLeftActions()
 		else
 			resetResultSprites();
 	}
-	else if (allRectanglesFull() && result.first >= result.second)
-	{
-		if (++firstsetcount == (letters == Letters::THREE ? 9 : 7))
-		{
-			fncount = word_size + 1;
-			isEmptyFirstSet = true;
-		}
-		if (result.first == word_size && result.second == word_size)
-			win_text.setFillColor(sf::Color::Magenta);
-		else
-		{
-			addWordToHistory();
-			resetSprites();
-			resetResultSprites();
-			result_rects[0].setFilling(false);
-			result_rects[1].setFilling(false);
-
-			if (result.first == 0 && result.second == 0)
-				for (char c : word)
-					hidden_letters.insert(c);
-			else
-			{
-				comp_words[word] = result;
-				fncount += result.first;
-
-				if (fncount == word_size)
-				{
-					for (const string& str : strset)
-						for (char c : str)
-							hidden_letters.insert(c);
-					strset.clear();
-					isEmptyFirstSet = true;
-				}
-			}
-			if (isEmptyFirstSet)
-				updateSet();
-			nextWordFromSet();
-		}
-	}
+	else compGuessing();
 }
 
 //------------------------------------------------------------------------------------------------
@@ -517,32 +586,36 @@ void Game::actions()
 	wrong_action_text.setFillColor(bgcolor);
 	if (guesser == Guesser::COMPUTER)
 	{
-		word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color::Cyan);
+		word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color{0,128,255});
 		if (allRectanglesFull())
 			wrong_action_text.setFillColor(result.second > result.first ? sf::Color::Red : bgcolor);
 		else
 			resetResultRectNumbers();
-		
+
 		if (noOptions)
 		{
 			wrong_action_text.setString(language == Language::UKR
-				? "Â áàç³ íåìàº òàêîãî ñëîâà, ÿê Âè çàãàäàëè, àáî Âè äàâàëè íåïðàâèëüí³ ðåçóëüòàòè!"
-				: "Â áàçå íåò òàêîãî ñëîâà, êàê Âû çàãàäàëè, èëè Âû äàâàëè íåïðàâèëüíûå ðåçóëüòàòû!");
+				? "Ð’ Ð±Ð°Ð·Ñ– Ð½ÐµÐ¼Ð°Ñ” Ñ‚Ð°ÐºÐ¾Ð³Ð¾ ÑÐ»Ð¾Ð²Ð°, ÑÐº Ð’Ð¸ Ð·Ð°Ð³Ð°Ð´Ð°Ð»Ð¸, Ð°Ð±Ð¾ Ð’Ð¸ Ð´Ð°Ð²Ð°Ð»Ð¸ Ð½ÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ– Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ð¸!"
+				: "Ð’ Ð±Ð°Ð·Ðµ Ð½ÐµÑ‚ Ñ‚Ð°ÐºÐ¾Ð³Ð¾ ÑÐ»Ð¾Ð²Ð°, ÐºÐ°Ðº Ð’Ñ‹ Ð·Ð°Ð³Ð°Ð´Ð°Ð»Ð¸, Ð¸Ð»Ð¸ Ð’Ñ‹ Ð´Ð°Ð²Ð°Ð»Ð¸ Ð½ÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ðµ Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ñ‹!");
 			wrong_action_text.setFillColor(sf::Color::Red);
-			resetSprites();
+			resetLetterSprites();
 		}
 	}
 	else
 	{
 		if (allRectanglesFull())
+		{
+			up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? up_text.setFillColor(sf::Color::Blue) : up_text.setFillColor(sf::Color::Cyan);
 			if (!dictionary.is_wrong_word(word))
-				word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color::Cyan);
+				word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color{ 0,128,255 });
 			else
 				wrong_action_text.setFillColor(sf::Color::Red);
+		}
 		else
 		{
 			resetRectangleLetters();
 			word_expl_text.setFillColor(bgcolor);
+			up_text.setFillColor(bgcolor);
 		}
 	}
 	if (motion) moveSprite();
@@ -563,7 +636,7 @@ void Game::explTextFormatting(sf::RenderWindow& window, sf::Text& text, wstring&
 		else if (text.findCharacterPos(i).x > window.getSize().x - 50)
 		{
 			while (ws[i] != L' ') --i;
-			ws.replace(ws.begin() + i, ws.begin() + i + 1, L"\n");
+			ws[i] = L'\n';
 		}
 		text.setString(ws);
 	}
@@ -580,7 +653,7 @@ void Game::wordExplaining(sf::RenderWindow& window)
 	if (!font.loadFromFile(fontname))
 		throw runtime_error("GameWindow::wordExplaining(): cannot open a font file " + fontname);
 	wstring ws = filesystem::path(dictionary.word_explanation(word)).wstring();
-	wstring backstr = language == Language::UKR ? L"Äëÿ âèõîäó íà ïîïåðåäí³é åêðàí íàòèñí³òü Esc àáî çàêðèéòå â³êíî" : L"Äëÿ âûõîäà íà ïðåäûäóùèé ýêðàí íàæìèòå Esc èëè çàêðîéòå îêíî";
+	wstring backstr = language == Language::UKR ? L"Ð”Ð»Ñ Ð²Ð¸Ñ…Ð¾Ð´Ñƒ Ð½Ð° Ð¿Ð¾Ð¿ÐµÑ€ÐµÐ´Ð½Ñ–Ð¹ ÐµÐºÑ€Ð°Ð½ Ð½Ð°Ñ‚Ð¸ÑÐ½Ñ–Ñ‚ÑŒ Esc Ð°Ð±Ð¾ Ð·Ð°ÐºÑ€Ð¸Ð¹Ñ‚Ðµ Ð²Ñ–ÐºÐ½Ð¾" : L"Ð”Ð»Ñ Ð²Ñ‹Ñ…Ð¾Ð´Ð° Ð½Ð° Ð¿Ñ€ÐµÐ´Ñ‹Ð´ÑƒÑ‰Ð¸Ð¹ ÑÐºÑ€Ð°Ð½ Ð½Ð°Ð¶Ð¼Ð¸Ñ‚Ðµ Esc Ð¸Ð»Ð¸ Ð·Ð°ÐºÑ€Ð¾Ð¹Ñ‚Ðµ Ð¾ÐºÐ½Ð¾";
 	sf::Text text{ ws, font, 20 }, back_text{ backstr, font, 20 };
 	explTextFormatting(window, text, ws);
 	back_text.move(50, window.getSize().y - 100);
@@ -596,10 +669,57 @@ void Game::wordExplaining(sf::RenderWindow& window)
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 			break;
 
-		window.clear(sf::Color::White);
+		window.clear(bgcolor);
 		window.draw(text);
 		window.draw(back_text);
 		window.display();
+	}
+}
+
+//------------------------------------------------------------------------------------------------
+
+void Game::compGuessing()
+{
+	if (allRectanglesFull() && result.first >= result.second)
+	{
+		if (++firstsetcount == (letters == Letters::THREE ? (int)FirstSetSizeFor::THREE : (int)FirstSetSizeFor::FOUR))
+		{
+			fncount = word_size + 1;
+			isEmptyFirstSet = true;
+		}
+		if (result.first == word_size && result.second == word_size)
+			winHandling();
+		else
+		{
+			addWordToHistory();
+			resetLetterSprites();
+			resetResultSprites();
+			result_rectangles[0].setFilling(false);
+			result_rectangles[1].setFilling(false);
+
+			if (result.first == 0 && result.second == 0)
+				for (char c : word)
+					hidden_letters.insert(c);
+			else
+			{
+				comp_words[word] = result;
+				fncount += result.first;
+				if (fncount > word_size && !isEmptyFirstSet)
+					noOptions = true;
+				else if (fncount == word_size)
+				{
+					for (const string& str : strset)
+						for (char c : str)
+							hidden_letters.insert(c);
+					strset.clear();
+					isEmptyFirstSet = true;
+				}
+			}
+			if (isEmptyFirstSet)
+				updateSet();
+			if (!noOptions)
+				nextWordFromSet();
+		}
 	}
 }
 
@@ -611,13 +731,13 @@ void Game::nextWordFromSet()
 	{
 		word = *strset.begin();
 		strset.erase(word);
+		for (int i = 0; i < word.size(); i++)
+			for (int j = 0; j < letter_sprites.size(); j++)
+				if (letter_sprites[j].getLetter() == word[i])
+					letter_sprites[j].setPosition(letter_rectangles[i].getPosition().x, letter_rectangles[i].getPosition().y);
 	}
 	else
 		noOptions = true;
-	for (int i = 0; i < word.size(); i++)
-		for (int j = 0; j < sprites.size(); j++)
-			if (sprites[j].getLetter() == word[i])
-				sprites[j].setPosition(rectangles[i].getPosition().x, rectangles[i].getPosition().y);
 }
 
 //------------------------------------------------------------------------------------------------

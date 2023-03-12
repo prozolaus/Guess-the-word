@@ -24,6 +24,7 @@ class Menu
 	bool player_guesses, comp_guesses;
 	bool three_ls, four_ls;
 	bool school_lvl, normal_lvl, erudite_lvl;
+	sf::Vector2i pos;
 	const int x = 100, y = 100;
 	void changeLangToUKR();
 	void changeLangToRUS();
@@ -33,8 +34,8 @@ class Menu
 public:
 
 	Menu(unsigned int window_width, unsigned int window_height);
-	sf::Vector2i pos;
 
+	void setMousePos(const sf::Vector2i p) { pos = p; }
 	void setAllTextBlack();
 	void changeColorOnHover();
 	bool isStartGame();

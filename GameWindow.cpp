@@ -24,7 +24,7 @@ MenuSettings GameWindow::menu()
 		while (pollEvent(event))
 			if (event.type == sf::Event::Closed)
 				close();
-		menu.pos = sf::Mouse::getPosition(*this);
+		menu.setMousePos(sf::Mouse::getPosition(*this));
 		clear(sf::Color::White);
 		menu.setAllTextBlack();
 		menu.changeColorOnHover();
@@ -91,8 +91,7 @@ void GameWindow::runGame()
 			ms = menu();
 			updateTitle(ms);
 		}
-		if (ms.guesser == Guesser::COMPUTER && ms.letters == Letters::FOUR)
-			wait(ms.language);
+		wait(ms.language);
 		Game game{ ms, getStartSize()};
 		restart = game.play(*this);
 	}
