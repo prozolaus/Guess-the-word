@@ -57,7 +57,7 @@ void Game::setImages()
 
 void Game::setSounds()
 {
-	string winsoundname = "sounds\\winning-chimes.wav";
+	string winsoundname = "sounds\\success.wav";
 	if (!winsoundbuffer.loadFromFile(winsoundname))
 		throw runtime_error("Game::setGame(): Cannot open an image file " + winsoundname);
 	winsound.setBuffer(winsoundbuffer);
@@ -337,10 +337,13 @@ bool Game::isAnySpriteinRect()
 
 void Game::resetCurrentSprite()
 {
-	myspr->setStartPosition();
-	if (myspr->getConnectedRectangle())
-		myspr->getConnectedRectangle()->setFilling(false);
-	myspr->connectRectangle(nullptr);
+	if (myspr)
+	{
+		myspr->setStartPosition();
+		if (myspr->getConnectedRectangle())
+			myspr->getConnectedRectangle()->setFilling(false);
+		myspr->connectRectangle(nullptr);
+	}
 }
 
 void Game::moveSprite()
@@ -398,6 +401,7 @@ void Game::resetResultRectNumbers()
 
 void Game::resetAfterArrowClick()
 {
+	resetCurrentSprite();
 	resetLetterSprites();
 	resetResultSprites();
 	for (int i = 0; i < letter_rectangles.size(); i++)
