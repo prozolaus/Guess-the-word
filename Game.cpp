@@ -355,15 +355,16 @@ void Game::moveSprite()
 
 void Game::setSpriteHidingOptions()
 {
-	(myspr->getColor() == defsprcolor) ? myspr->setColor(hidcolor) : myspr->setColor(defsprcolor);
 	if (myspr->getLetterHiding())
 	{
+		myspr->setColor(defsprcolor);
 		myspr->setLetterHiding(false);
 		auto it = find(hidden_letters.begin(), hidden_letters.end(), myspr->getLetter());
 		hidden_letters.erase(it);
 	}
 	else
 	{
+		myspr->setColor(hidcolor);
 		myspr->setLetterHiding(true);
 		hidden_letters.insert(myspr->getLetter());
 	}
@@ -404,6 +405,8 @@ void Game::resetAfterArrowClick()
 	resetCurrentSprite();
 	resetLetterSprites();
 	resetResultSprites();
+	for (int i = 0; i < letter_sprites.size(); i++)
+		letter_sprites[i].connectRectangle(nullptr);
 	for (int i = 0; i < letter_rectangles.size(); i++)
 		letter_rectangles[i].setFilling(false);
 	resetRectangleLetters();
@@ -435,9 +438,7 @@ void Game::resultHandling()
 			if (letter_sprites[i].getConnectedRectangle())
 			{
 				myspr = &letter_sprites[i];
-				myspr->setColor(defsprcolor);
 				setSpriteHidingOptions();
-				myspr->connectRectangle(nullptr);
 				myspr = nullptr;
 			}
 }
@@ -483,7 +484,7 @@ void Game::updateClueWords()
 	clues.resize(clue_words.size());
 	for (int i = 0; i < clues.size(); i++)
 	{
-		clues[i] = sf::Text{ filesystem::path(clue_words[i]).wstring(), font, 16 };
+		clues[i] = sf::Text{ filesystem::path(clue_words[i]).wstring(), font, 18 };
 		clues[i].move(630, 630 - (i * 20));
 		clues[i].setFillColor(sf::Color::Black);
 	}
@@ -564,7 +565,10 @@ void Game::oneTimeLeftActions()
 			hideClues();
 		}
 		else
+		{
 			resetResultSprites();
+			resetRectangleLetters();
+		}
 	}
 	else compGuessing();
 }
@@ -577,7 +581,10 @@ void Game::oneTimeRightActions()
 	resetCurrentSprite();
 	hiding = false;
 	if (!allRectanglesFull())
+	{
 		resetResultSprites();
+		resetRectangleLetters();
+	}
 }
 
 //------------------------------------------------------------------------------------------------
@@ -585,8 +592,8 @@ void Game::oneTimeRightActions()
 void Game::actions()
 {
 	menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? menu_text.setFillColor(sf::Color::Blue) : menu_text.setFillColor(sf::Color::Black);
-	clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? clue_text.setFillColor(sf::Color::Blue) : clue_text.setFillColor(sf::Color::Black);
 	restart_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? restart_text.setFillColor(sf::Color::Blue) : restart_text.setFillColor(sf::Color::Black);
+	clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? clue_text.setFillColor(sf::Color::Blue) : clue_text.setFillColor(sf::Color::Black);
 	wrong_action_text.setFillColor(bgcolor);
 	if (guesser == Guesser::COMPUTER)
 	{
@@ -617,7 +624,6 @@ void Game::actions()
 		}
 		else
 		{
-			resetRectangleLetters();
 			word_expl_text.setFillColor(bgcolor);
 			up_text.setFillColor(bgcolor);
 		}
