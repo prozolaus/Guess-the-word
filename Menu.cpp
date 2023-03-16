@@ -209,6 +209,7 @@ void Menu::mouseClickHandling()
 
 void Menu::drawMenu(sf::RenderWindow& window)
 {
+	window.clear(sf::Color{ 255, 255, 102 });
 	window.draw(start);
 	window.draw(lang);
 	window.draw(ua);

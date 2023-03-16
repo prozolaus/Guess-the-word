@@ -12,7 +12,7 @@ Game::Game(MenuSettings ms, sf::Vector2u wndw_size)
 	motion{ false }, hiding{ false }, isEmptyFirstSet{ false }, noOptions{ false }, gameover{ false },
 	dX{ 0 }, dY{ 0 },
 	pixelPos{ 0, 0 },
-	defsprcolor{ sf::Color::White }, bgcolor{ sf::Color{ 255,255,250 } }, hidcolor{ sf::Color{ 255,255,255,45 } }, wincolor{ sf::Color{ 153,255,204 } },
+	defsprcolor{ sf::Color::White }, bgcolor{ sf::Color{ 230, 230, 255 } }, hidcolor{ sf::Color{ 255,255,255,45 } }, wincolor{ sf::Color{ 153,255,204 } },
 	textures{ alphabet_size },
 	result_textures{ word_size + 1 },
 	myspr{ nullptr },
@@ -80,14 +80,15 @@ void Game::setTextures()
 
 void Game::setLetterSprites()
 {
-	int shift = guesser == Guesser::PLAYER ? 0 : 400;
+	int shift = guesser == Guesser::PLAYER ? 0 : 500;
 	for (int i = 0, count = 0; i < 6; i++)
 		for (int j = 0; j < 6; j++)
 		{
 			if (count == alphabet_size)
 				break;
 			letter_sprites.push_back(MyLetterSprite{ textures[count++] });
-			letter_sprites.back().setStartCoords(j * sprite_size - shift, i * sprite_size);
+			letter_sprites.back().setStartCoords(j * sprite_size - shift + 45, i * sprite_size + 15);
+			letter_sprites.back().setColor(defsprcolor);
 		}
 }
 
@@ -96,7 +97,7 @@ void Game::setLetterRectangles()
 	letter_rectangles.assign(word_size, MyRectangleShape{ sf::Vector2f(sprite_size, sprite_size) });
 	for (int i = 0, xr = letters == Letters::THREE ? 150 : 118; i < letter_rectangles.size(); i++)
 	{
-		letter_rectangles[i].setFillColor(sf::Color(175, 180, 240));
+		letter_rectangles[i].setFillColor(guesser == Guesser::COMPUTER ? sf::Color::White : sf::Color::Yellow);
 		letter_rectangles[i].move(xr + i * sprite_size, 450);
 		letter_rectangles[i].setOutlineColor(sf::Color::Black);
 		letter_rectangles[i].setOutlineThickness(1.f);
@@ -117,7 +118,7 @@ void Game::setResultSprites(std::vector<MyLetterSprite>& rsprites, int x)
 void Game::setResultRect(sf::RectangleShape& rect, float x)
 {
 	rect.move(x, 550.f);
-	rect.setFillColor(sf::Color::Yellow);
+	rect.setFillColor(guesser == Guesser::COMPUTER ? sf::Color::Yellow : sf::Color::White);
 	rect.setOutlineColor(sf::Color::Black);
 	rect.setOutlineThickness(1.f);
 }
@@ -185,7 +186,7 @@ void Game::setText()
 	wrong_action_text.setFont(font);
 	wrong_action_text.setCharacterSize(20);
 	wrong_action_text.setFillColor(bgcolor);
-	wrong_action_text.move(20, 400);
+	wrong_action_text.move(20, 410);
 	wrong_action_text.setString(wrword);
 
 	word_expl_text.setFont(font);
@@ -437,9 +438,9 @@ void Game::resultHandling()
 		for (int i = 0; i < letter_sprites.size(); i++)
 			if (letter_sprites[i].getConnectedRectangle())
 			{
-				myspr = &letter_sprites[i];
-				setSpriteHidingOptions();
-				myspr = nullptr;
+				letter_sprites[i].setColor(hidcolor);
+				letter_sprites[i].setLetterHiding(true);
+				hidden_letters.insert(letter_sprites[i].getLetter());
 			}
 }
 
@@ -616,7 +617,7 @@ void Game::actions()
 	{
 		if (allRectanglesFull())
 		{
-			up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? up_text.setFillColor(sf::Color::Blue) : up_text.setFillColor(sf::Color::Cyan);
+			up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? up_text.setFillColor(sf::Color::Blue) : up_text.setFillColor(sf::Color::Green);
 			if (!dictionary.is_wrong_word(word))
 				word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color{ 0,128,255 });
 			else
@@ -664,9 +665,9 @@ void Game::wordExplaining(sf::RenderWindow& window)
 		throw runtime_error("GameWindow::wordExplaining(): cannot open a font file " + fontname);
 	wstring ws = filesystem::path(dictionary.word_explanation(word)).wstring();
 	wstring backstr = language == Language::UKR ? L"Для виходу на попередній екран натисніть Esc або закрийте вікно" : L"Для выхода на предыдущий экран нажмите Esc или закройте окно";
-	sf::Text text{ ws, font, 20 }, back_text{ backstr, font, 20 };
+	sf::Text text{ ws, font, 21 }, back_text{ backstr, font, 20 };
 	explTextFormatting(window, text, ws);
-	back_text.move(50, window.getSize().y - 100);
+	back_text.move(50, window.getSize().y - 50);
 	back_text.setFillColor(sf::Color::Red);
 
 	while (window.isOpen())
