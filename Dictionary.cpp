@@ -76,33 +76,9 @@ void Dictionary::fill_all_dicts()
 	hidden_word = get_random_word();
 }
 
-void Dictionary::set_language(Language lang)
-{
-	language = lang;
-	fill_all_dicts();
-}
-
-void Dictionary::set_letters(Letters lttrs)
-{
-	letters = lttrs;
-	fill_all_dicts();
-}
-
-void Dictionary::set_level(Level lvl)
-{
-	level = lvl;
-	fill_all_dicts();
-}
-
 void Dictionary::clear_all_dicts()
 {
 	current_dict.clear(), second_dict.clear(), third_dict.clear(), combined_dict.clear();
-}
-
-void Dictionary::print_words(ostream& os)
-{
-	for (const auto& p : current_dict)
-		os << p.first << endl;
 }
 
 string Dictionary::get_random_word()
@@ -128,12 +104,37 @@ pair<int, int> Dictionary::get_result(const string& pword)
 	return (letters == Letters::THREE ? get_result_for_3_letters(hidden_word, pword) : get_result_for_4_letters(hidden_word, pword));
 }
 
+pair<int, int> Dictionary::get_result(const string& word1, const string& word2)
+{
+	if (word1.size() != (int)letters || word2.size() != (int)letters)
+		throw runtime_error("Dictionary::get_result(word1, word2): Wrong word.size()!");
+	return (letters == Letters::THREE ? get_result_for_3_letters(word1, word2) : get_result_for_4_letters(word1, word2));
+}
+
 bool Dictionary::is_wrong_word(const string& word)
 {
 	return (combined_dict.find(word) != combined_dict.end()) ? false : true;
 }
 
-vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map, 
+bool Dictionary::is_word_contain_hidletters(const string& word, const std::set<char>& hidden_letters)
+{
+	bool hidletter = false;
+	for (int i = 0; i < word.size() && !hidletter; i++)
+		for (auto chit = hidden_letters.begin(); chit != hidden_letters.end() && !hidletter; ++chit)
+			if (word[i] == *chit)
+				hidletter = true;
+	return hidletter;
+}
+
+bool Dictionary::is_word_from_history(const string& word, const vector<string>& words_from_history)
+{
+	for (auto w : words_from_history)
+		if (w == word)
+			return true;
+	return false;
+}
+
+vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map,
 	const vector<string>& words_from_history, const std::set<char>& hidden_letters, const unsigned int n)
 {
 	string s1 = "Dictionary::get_some_words(unordered_map<int, char> map): map ";
@@ -153,21 +154,51 @@ vector<string> Dictionary::get_clue_words(unordered_map<unsigned int, char> map,
 			if (cd.first[m.first] == map[m.first])
 				count++;
 		if (count == map.size())
-		{
-			bool hidletter = false;
-			for (int i = 0; i < cd.first.size() && !hidletter; i++)
-				for (char hl : hidden_letters)
-					if (!hidletter && cd.first[i] == hl)
-						hidletter = true;
-			bool isFromHistory = false;
-			for (auto w : words_from_history) if (w == cd.first) isFromHistory = true;
-			if (!hidletter && !isFromHistory) 
+			if (!is_word_contain_hidletters(cd.first, hidden_letters) && !is_word_from_history(cd.first, words_from_history))
 				vs.push_back(cd.first);
-		}
 		if (vs.size() == n)
 			break;
 	}
 	if (vs.size() == 0)
 		vs.push_back(language == Language::UKR ? "Не знайдено слів" : "Не найдено слов");
 	return vs;
+}
+
+bool Dictionary::is_set_contain_letters(const std::set<string>& ss, const string& s)  //Does string s contain letters from set?
+{
+	for (const string& x : ss)
+		for (int i = 0; i < x.size(); i++)
+			for (int j = 0; j < s.size(); j++)
+				if (x[i] == s[j])
+					return true;
+	return false;
+}
+
+std::set<string> Dictionary::generate_first_set()
+{
+	std::set<string> ss;
+	const int n = letters == Letters::THREE ? (int)FirstSetSizeFor::THREE : (int)FirstSetSizeFor::FOUR;
+	while (ss.size() < n)
+	{
+		ss.clear();
+		random_device rd;
+		mt19937 mersenne{ rd() };
+		for (int i = 0; i < combined_dict.size() && ss.size() < n; i++)
+		{
+			auto iter = combined_dict.begin();
+			advance(iter, mersenne() % combined_dict.size());
+			if (i == 0 || !is_set_contain_letters(ss, iter->first))
+				ss.insert(iter->first);
+		}
+	}
+	return ss;
+}
+
+std::set<string> Dictionary::generate_another_set(const vector<string>& words_from_history, const std::set<char>& hidden_letters)
+{
+	std::set<string> ss;
+	for (const auto& cd : combined_dict)
+		if (!is_word_contain_hidletters(cd.first, hidden_letters) && !is_word_from_history(cd.first, words_from_history))
+			ss.insert(cd.first);
+	return ss;
 }

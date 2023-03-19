@@ -1,6 +1,9 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include "Dictionary.h"
+
+//----------------------------------------------------------------------------------------------------
 
 class MyRectangleShape : public sf::RectangleShape
 {
@@ -12,10 +15,14 @@ public:
 	bool getFilling() const { return filling; }
 };
 
+//----------------------------------------------------------------------------------------------------
+
+
 class MyLetterSprite : public sf::Sprite
 {
 	using Sprite::Sprite;
-	char letter;
+	char letter = ' ';
+	int number = -1;
 	bool hiding = false;
 	MyRectangleShape* rec = nullptr;
 	sf::Vector2i startpos;
@@ -23,6 +30,8 @@ class MyLetterSprite : public sf::Sprite
 public:
 	void setLetter(char l) { letter = l; }
 	char getLetter() const { return letter; }
+	void setNumber(int n) { number = n; }
+	int getNumber() const { return number; }
 	void setLetterHiding(bool lh) { hiding = lh; }
 	bool getLetterHiding() const { return hiding; }
 	void connectRectangle(MyRectangleShape* myrecshape) { rec = myrecshape; }
@@ -31,68 +40,85 @@ public:
 	void setStartPosition() { setPosition(startpos.x, startpos.y); }
 };
 
+//----------------------------------------------------------------------------------------------------
+
 class Game
 {
 	const int alphabet_size;
 	Dictionary dictionary;
 	Language language;
 	Letters letters;
-	bool motion, hiding;
+	Guesser guesser;
+	const int sprite_size;
+	int word_size, fncount, firstsetcount;
+	bool motion, hiding, isEmptyFirstSet, noOptions, gameover, sound;
 	float dX, dY;
-	sf::Color bgcolor;
+	sf::Vector2i pixelPos;
+	sf::Color defsprcolor, bgcolor, hidcolor, wincolor;
 	std::vector<sf::Texture> textures, result_textures;
-	std::vector<MyLetterSprite> sprites, result_sprites, result_sprites2;
-	std::vector<MyRectangleShape> rectangles;
-	MyLetterSprite* myspr = nullptr;
-	sf::RectangleShape resultrect1, resultrect2;
+	MyLetterSprite* myspr;
+	pair<int, int> result;
+	string word, winword;
+	std::vector<MyLetterSprite> letter_sprites;
+	std::pair<std::vector<MyLetterSprite>, std::vector<MyLetterSprite>> result_sprites;
+	std::vector<MyRectangleShape> letter_rectangles, result_rectangles;
 	sf::CircleShape dot1, dot2;
-	sf::Text result_text, win_text, menu_text, wrong_word_text, word_expl_text, clue_text, restart_text;
+	sf::Texture winimagetexture, soundontexture, soundofftexture;
+	sf::Sprite winimagesprite, soundsprite;
+	sf::SoundBuffer winsoundbuffer, inrectsoundbuffer, allrectsoundbuffer, wrongsoundbuffer, arrowsoundbuffer, hidsoundbuffer;
+	sf::Sound winsound, inrectsound, allrectsound, wrongsound, arrowsound, hidsound;
+	sf::Font font, font2;
+	sf::Text word_text, result_text, up_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
 	vector<sf::Text> history, clues;
-	sf::Font font;
-	string word;
 	vector<string> history_vs, clue_words;
-	std::set<char> hidden_letters;
+	set<char> hidden_letters;
+	set<string> strset;
+	unordered_map<string, pair<int, int>> comp_words;
+
 	void setGame();
-	void setText();
+	void setOneImage(const std::string&, sf::Texture&, sf::Sprite&);
+	void setImages();
+	void setOneSound(const std::string&, sf::SoundBuffer&, sf::Sound&);
+	void setSounds();
+	void setTextures();
+	void setLetterSprites();
+	void setLetterRectangles();
+	void setResultSprites(std::vector<MyLetterSprite>&, int);
 	void setResultRect(sf::RectangleShape& rect, float x);
 	void setResultDot(sf::CircleShape& dot, int y);
+	void setFonts();
+	void setText();
+	void lettersInit();
+
+	bool allRectanglesFull();
+	void drawAll(sf::RenderWindow& window);
+	bool isAnySpriteContainMousePos();
+	bool isAnySpriteinRect();
+	void resetCurrentSprite();
+	void moveSprite();
+	void setSpriteHidingOptions();
+	void resetResultSprites();
+	void resetLetterSprites();
+	void resetRectangleLetters();
+	void resetResultRectNumbers();
+	void resetAfterArrowClick();
+	void addWordToHistory();
+	void resultHandling();
+	bool isWinwordContainLetter(char);
+	void winHandling();
+	void updateClueWords();
+	void hideClues();
+	void nextWordFromSet();
+	void updateSet();
+	void compGuessing();
+
+	void oneTimeLeftActions();
+	void oneTimeRightActions();
+	void actions();
+	void explTextFormatting(sf::RenderWindow& window, sf::Text&, wstring& ws);
+	void wordExplaining(sf::RenderWindow& window);
 
 public:
 	Game(MenuSettings);
-	void setMotion(bool m) { motion = m; }
-	void setHiding(bool h) { hiding = h; }
-	bool getMotion() const { return motion; }
-	bool getHiding() const { return hiding; }
-	void setdX(float dx) { dX = dx; }
-	void setdY(float dy) { dY = dy; }
-	float getdX() const { return dX; }
-	float getdY() const { return dY; }
-	sf::Color getBgColor() const { return bgcolor; }
-	Language getLanguage() const { return language; }
-	int wordSize() { return int(letters); }
-	void setLetterInWord(int i, char l) { word.at(i) = l; }
-	void letterInit();
-	bool allRectanglesFull();
-	bool isWrongWord();
-	void drawAll(sf::RenderWindow& window);
-	bool isAnySpriteContain(int, int);
-	bool isAnySpriteinRect(int, int);
-	void resetCurrentSprite();
-	void moveSprite(int x, int y);
-	void setSpriteHidingOptions();
-	void resetResultSprites();
-	void resetRectangleLetters();
-	void setMenuTextColor(sf::Color c) { menu_text.setFillColor(c); }
-	bool isMenuTextContain(int x, int y) { return menu_text.getGlobalBounds().contains(x, y); }
-	void setRestartTextColor(sf::Color c) { restart_text.setFillColor(c); }
-	bool isRestartTextContain(int x, int y) { return restart_text.getGlobalBounds().contains(x, y); }
-	void setClueTextColor(sf::Color c) { clue_text.setFillColor(c); }
-	bool isClueTextContain(int x, int y) { return clue_text.getGlobalBounds().contains(x, y); }
-	void setExplTextColor(sf::Color c) { word_expl_text.setFillColor(c); }
-	bool isExplTextContain(int x, int y) { return word_expl_text.getGlobalBounds().contains(x, y); }
-	void setWrongWordTextColor(sf::Color c) { wrong_word_text.setFillColor(c); }
-	void resultHandling();
-	wstring getWordExplanation() { return filesystem::path(dictionary.word_explanation(word)).wstring(); }
-	void updateClueWords();
-	void hideClues();
+	bool play(sf::RenderWindow& window);
 };
