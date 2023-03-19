@@ -4,17 +4,14 @@
 class GameWindow : public sf::RenderWindow
 {
 	bool restart;
-	sf::Vector2u startSize;
 	string windowname;
 	MenuSettings menu();
 	void wait(Language lang);
 
 public:
-	GameWindow(sf::VideoMode, const sf::String);
+	GameWindow(sf::VideoMode, const sf::String, sf::Uint32);
 	void runGame();
 	void updateTitle(MenuSettings ms);
-	void setStartSize() { setSize(startSize); }
-	sf::Vector2u getStartSize() const { return startSize; }
 };
 
 //-----------------------------------------------------------------------------

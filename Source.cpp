@@ -4,10 +4,10 @@ int main()
 //int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 try
 {
-	GameWindow window(sf::VideoMode(700, 700), "Guess the word");
+	GameWindow window(sf::VideoMode(700, 700), "Guess the word", sf::Style::Titlebar | sf::Style::Close);
 	window.setFramerateLimit(60);
 	window.runGame();
-
+	
 	return 0;
 }
 catch (const std::exception& e)

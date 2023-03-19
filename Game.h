@@ -44,7 +44,6 @@ public:
 
 class Game
 {
-	sf::Vector2u window_size;
 	const int alphabet_size;
 	Dictionary dictionary;
 	Language language;
@@ -52,7 +51,7 @@ class Game
 	Guesser guesser;
 	const int sprite_size;
 	int word_size, fncount, firstsetcount;
-	bool motion, hiding, isEmptyFirstSet, noOptions, gameover;
+	bool motion, hiding, isEmptyFirstSet, noOptions, gameover, sound;
 	float dX, dY;
 	sf::Vector2i pixelPos;
 	sf::Color defsprcolor, bgcolor, hidcolor, wincolor;
@@ -64,10 +63,10 @@ class Game
 	std::pair<std::vector<MyLetterSprite>, std::vector<MyLetterSprite>> result_sprites;
 	std::vector<MyRectangleShape> letter_rectangles, result_rectangles;
 	sf::CircleShape dot1, dot2;
-	sf::Texture winimagetexture;
-	sf::Sprite winimagesprite;
-	sf::SoundBuffer winsoundbuffer;
-	sf::Sound winsound;
+	sf::Texture winimagetexture, soundontexture, soundofftexture;
+	sf::Sprite winimagesprite, soundsprite;
+	sf::SoundBuffer winsoundbuffer, inrectsoundbuffer, allrectsoundbuffer, wrongsoundbuffer, arrowsoundbuffer, hidsoundbuffer;
+	sf::Sound winsound, inrectsound, allrectsound, wrongsound, arrowsound, hidsound;
 	sf::Font font, font2;
 	sf::Text word_text, result_text, up_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
 	vector<sf::Text> history, clues;
@@ -77,7 +76,9 @@ class Game
 	unordered_map<string, pair<int, int>> comp_words;
 
 	void setGame();
+	void setOneImage(const std::string&, sf::Texture&, sf::Sprite&);
 	void setImages();
+	void setOneSound(const std::string&, sf::SoundBuffer&, sf::Sound&);
 	void setSounds();
 	void setTextures();
 	void setLetterSprites();
@@ -118,6 +119,6 @@ class Game
 	void wordExplaining(sf::RenderWindow& window);
 
 public:
-	Game(MenuSettings, sf::Vector2u);
+	Game(MenuSettings);
 	bool play(sf::RenderWindow& window);
 };

@@ -29,18 +29,22 @@ Menu::Menu(unsigned int window_width, unsigned int window_height)
 	UA_lang{ false }, RU_lang{ false },
 	player_guesses{ false }, comp_guesses{ false },
 	three_ls{ false }, four_ls{ false },
-	school_lvl{ false }, normal_lvl{ false }, erudite_lvl{ false }
+	school_lvl{ false }, normal_lvl{ false }, erudite_lvl{ false },
+	x{ 148 }, y{ 248 }
 {
-	start.setPosition(window_width / 2 - start.getGlobalBounds().width / 2, window_height / 2);
+	start.setPosition(window_width / 2 - start.getGlobalBounds().width / 2, window_height / 1.5);
 	ua.setPosition(x + lang.getGlobalBounds().width + x / 3, y);
 	ru.setPosition(ua.getPosition().x + x / 2, y);
-	player.setPosition(ua.getPosition().x, 1.5 * y);
-	three.setPosition(ua.getPosition().x, 2 * y);
-	four.setPosition(three.getPosition().x + three.getGlobalBounds().width + x / 3, 2 * y);
-	school.setPosition(three.getPosition().x, 2.5 * y);
+	player.setPosition(ua.getPosition().x, 1.2 * y);
+	three.setPosition(ua.getPosition().x, 1.4 * y);
+	four.setPosition(three.getPosition().x + three.getGlobalBounds().width + x / 3, 1.4 * y);
+	school.setPosition(three.getPosition().x, 1.6 * y);
 	TextCorrection();
+	string fname = "images\\lamp.jpg";
+	if (!bgtexture.loadFromFile(fname))
+		throw runtime_error("Menu constructor: cannot open a background file " + fname);
+	background.setTexture(bgtexture);
 }
-
 
 void Menu::changeLangToUKR()
 {
@@ -82,14 +86,13 @@ void Menu::TextCorrection()
 {
 	int shift = RU_lang ? 30 : 0;
 	lang.setPosition(x - shift, y);
-	guesser.setPosition(x - shift, 1.5 * y);
-	lttrs.setPosition(x - shift, 2 * y);
-	lvl.setPosition(x - shift, 2.5 * y);
-	computer.setPosition(player.getPosition().x + player.getGlobalBounds().width + x / 3, 1.5 * y);
-	normal.setPosition(school.getPosition().x + school.getGlobalBounds().width + x / 3, 2.5 * y);
-	erudite.setPosition(normal.getPosition().x + normal.getGlobalBounds().width + x / 3, 2.5 * y);
+	guesser.setPosition(x - shift, 1.2 * y);
+	computer.setPosition(player.getPosition().x + player.getGlobalBounds().width + x / 3, 1.2 * y);
+	lttrs.setPosition(x - shift, 1.4 * y);
+	lvl.setPosition(x - shift, 1.6 * y);
+	normal.setPosition(school.getPosition().x + school.getGlobalBounds().width + x / 3, 1.6 * y);
+	erudite.setPosition(normal.getPosition().x + normal.getGlobalBounds().width + x / 3, 1.6 * y);
 }
-
 
 void Menu::setAllTextBlack()
 {
@@ -210,6 +213,7 @@ void Menu::mouseClickHandling()
 void Menu::drawMenu(sf::RenderWindow& window)
 {
 	window.clear(sf::Color{ 255, 255, 102 });
+	window.draw(background);
 	window.draw(start);
 	window.draw(lang);
 	window.draw(ua);

@@ -25,7 +25,9 @@ class Menu
 	bool three_ls, four_ls;
 	bool school_lvl, normal_lvl, erudite_lvl;
 	sf::Vector2i pos;
-	const int x = 100, y = 100;
+	const int x, y;
+	sf::Texture bgtexture;
+	sf::Sprite background;
 	void changeLangToUKR();
 	void changeLangToRUS();
 	void TextCorrection();

@@ -2,12 +2,10 @@
 
 //------------------------------------------------------------------------------------------------
 
-GameWindow::GameWindow(sf::VideoMode vm, const sf::String wndwname) 
-	: sf::RenderWindow(vm, wndwname)
+GameWindow::GameWindow(sf::VideoMode vm, const sf::String wndwname, sf::Uint32 style)
+	: sf::RenderWindow(vm, wndwname, style)
 {
 	restart = false;
-	startSize.x = vm.width;
-	startSize.y = vm.height;
 	windowname = wndwname;
 }
 
@@ -19,7 +17,6 @@ MenuSettings GameWindow::menu()
 
 	while (isOpen())
 	{
-		setStartSize();
 		sf::Event event;
 		while (pollEvent(event))
 			if (event.type == sf::Event::Closed)
@@ -92,7 +89,7 @@ void GameWindow::runGame()
 			updateTitle(ms);
 		}
 		wait(ms.language);
-		Game game{ ms, getStartSize()};
+		Game game{ ms };
 		restart = game.play(*this);
 	}
 }

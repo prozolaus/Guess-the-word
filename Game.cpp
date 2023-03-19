@@ -1,15 +1,14 @@
 ﻿#include "Game.h"
 
-Game::Game(MenuSettings ms, sf::Vector2u wndw_size)
-	: window_size{ wndw_size },
-	alphabet_size{ 33 },
+Game::Game(MenuSettings ms)
+	: alphabet_size{ 33 },
 	dictionary{ ms.language, ms.letters, ms.level },
 	language{ ms.language },
 	letters{ ms.letters },
 	guesser{ ms.guesser },
 	sprite_size{ 64 },
 	word_size{ int(letters) }, fncount{ 0 }, firstsetcount{ 0 },
-	motion{ false }, hiding{ false }, isEmptyFirstSet{ false }, noOptions{ false }, gameover{ false },
+	motion{ false }, hiding{ false }, isEmptyFirstSet{ false }, noOptions{ false }, gameover{ false }, sound { true },
 	dX{ 0 }, dY{ 0 },
 	pixelPos{ 0, 0 },
 	defsprcolor{ sf::Color::White }, bgcolor{ sf::Color{ 230, 230, 255 } }, hidcolor{ sf::Color{ 255,255,255,45 } }, wincolor{ sf::Color{ 153,255,204 } },
@@ -46,21 +45,37 @@ void Game::setGame()
 	setSounds();
 }
 
+void Game::setOneImage(const std::string& imgname, sf::Texture& imgtexture, sf::Sprite& imgsprite)
+{
+	if (!imgtexture.loadFromFile(imgname))
+		throw runtime_error("Game::setOneImage(): Cannot open an image file " + imgname);
+	imgsprite.setTexture(imgtexture);
+}
+
 void Game::setImages()
 {
-	string winimgname = "images\\firework.jpg";
-	if (!winimagetexture.loadFromFile(winimgname))
-		throw runtime_error("Game::setGame(): Cannot open an image file " + winimgname);
-	winimagesprite.setTexture(winimagetexture);
+	setOneImage("images\\firework.jpg", winimagetexture, winimagesprite);
 	winimagesprite.move(20, 20);
+	setOneImage("images\\speaker-off.png", soundofftexture, soundsprite);
+	setOneImage("images\\speaker-on.png", soundontexture, soundsprite);
+	soundsprite.move(630, 100);
+}
+
+void Game::setOneSound(const std::string& sndname, sf::SoundBuffer& sndbuffer, sf::Sound& snd)
+{
+	if (!sndbuffer.loadFromFile(sndname))
+		throw runtime_error("Game::setOneSound(): Cannot open an sound file " + sndname);
+	snd.setBuffer(sndbuffer);
 }
 
 void Game::setSounds()
 {
-	string winsoundname = "sounds\\success.wav";
-	if (!winsoundbuffer.loadFromFile(winsoundname))
-		throw runtime_error("Game::setGame(): Cannot open an image file " + winsoundname);
-	winsound.setBuffer(winsoundbuffer);
+	setOneSound("sounds\\win.ogg", winsoundbuffer, winsound);
+	setOneSound("sounds\\inrect.ogg", inrectsoundbuffer, inrectsound);
+	setOneSound("sounds\\allrect.ogg", allrectsoundbuffer, allrectsound);
+	setOneSound("sounds\\wrong.ogg", wrongsoundbuffer, wrongsound);
+	setOneSound("sounds\\arrow.ogg", arrowsoundbuffer, arrowsound);
+	setOneSound("sounds\\hid.ogg", hidsoundbuffer, hidsound);
 }
 
 void Game::setTextures()
@@ -266,6 +281,7 @@ void Game::drawAll(sf::RenderWindow& window)
 	window.draw(wrong_action_text);
 	window.draw(word_expl_text);
 	window.draw(restart_text);
+	window.draw(soundsprite);
 	window.draw(dot1);
 	window.draw(dot2);
 
@@ -365,6 +381,8 @@ void Game::setSpriteHidingOptions()
 	}
 	else
 	{
+		if (sound)
+			hidsound.play();
 		myspr->setColor(hidcolor);
 		myspr->setLetterHiding(true);
 		hidden_letters.insert(myspr->getLetter());
@@ -403,6 +421,8 @@ void Game::resetResultRectNumbers()
 
 void Game::resetAfterArrowClick()
 {
+	if (sound)
+		arrowsound.play();
 	resetCurrentSprite();
 	resetLetterSprites();
 	resetResultSprites();
@@ -471,7 +491,9 @@ void Game::winHandling()
 	}
 	result_sprites.first[result.first].setStartCoords(result_rectangles[0].getPosition().x, result_rectangles[0].getPosition().y);
 	result_sprites.second[result.second].setStartCoords(result_rectangles[1].getPosition().x, result_rectangles[1].getPosition().y);
-	winsound.play();
+
+	if (sound) 
+		winsound.play();
 }
 
 void Game::updateClueWords()
@@ -509,7 +531,6 @@ bool Game::play(sf::RenderWindow& window)
 {
 	while (window.isOpen())
 	{
-		window.setSize(window_size);	//sets start window size when user tries to change it
 		pixelPos = sf::Mouse::getPosition(window);
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -523,6 +544,11 @@ bool Game::play(sf::RenderWindow& window)
 						return false;
 					else if (restart_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 						return true;
+					else if (soundsprite.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+					{
+						sound = sound == false ? true : false;
+						soundsprite.setTexture(sound == false ? soundofftexture : soundontexture);
+					}
 					else if (clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 						updateClueWords();
 					else if (up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
@@ -558,12 +584,21 @@ void Game::oneTimeLeftActions()
 {
 	if (!isAnySpriteinRect())
 		resetCurrentSprite();
+	else if (sound)
+		inrectsound.play();
 	if (guesser == Guesser::PLAYER)
 	{
-		if (allRectanglesFull() && !dictionary.is_wrong_word(word))
+		if (allRectanglesFull())
 		{
-			resultHandling();
-			hideClues();
+			if (!dictionary.is_wrong_word(word))
+			{
+				resultHandling();
+				hideClues();
+				if (sound && !gameover)
+					allrectsound.play();
+			}
+			else if (sound)
+				wrongsound.play();
 		}
 		else
 		{
