@@ -5,6 +5,39 @@
 
 //----------------------------------------------------------------------------------------------------
 
+enum class SOUND
+{
+	OFF,
+	ON
+};
+
+//----------------------------------------------------------------------------------------------------
+
+struct Settings
+{
+	Language language;
+	Letters letters;
+	Level level;
+	Guesser guesser;
+	SOUND sound;
+	bool restart;
+	Settings() 
+		: language{ Language::UKR }, letters{ Letters::THREE }, 
+		level{ Level::SCHOOL }, guesser{ Guesser::PLAYER },
+		sound{ SOUND::ON }, restart{ false } {}
+};
+
+//----------------------------------------------------------------------------------------------------
+
+class GameText : public sf::Text
+{
+public:
+	using sf::Text::Text;
+	bool underMouse = false;
+};
+
+//----------------------------------------------------------------------------------------------------
+
 class MyRectangleShape : public sf::RectangleShape
 {
 	using RectangleShape::RectangleShape;
@@ -44,14 +77,12 @@ public:
 
 class Game
 {
+	Settings settings;
 	const int alphabet_size;
 	Dictionary dictionary;
-	Language language;
-	Letters letters;
-	Guesser guesser;
 	const int sprite_size;
 	int word_size, fncount, firstsetcount;
-	bool motion, hiding, isEmptyFirstSet, noOptions, gameover, sound;
+	bool motion, hiding, isEmptyFirstSet, noOptions, gameover;
 	float dX, dY;
 	sf::Vector2i pixelPos;
 	sf::Color defsprcolor, bgcolor, hidcolor, wincolor;
@@ -65,10 +96,10 @@ class Game
 	sf::CircleShape dot1, dot2;
 	sf::Texture winimagetexture, soundontexture, soundofftexture;
 	sf::Sprite winimagesprite, soundsprite;
-	sf::SoundBuffer winsoundbuffer, inrectsoundbuffer, allrectsoundbuffer, wrongsoundbuffer, arrowsoundbuffer, hidsoundbuffer;
-	sf::Sound winsound, inrectsound, allrectsound, wrongsound, arrowsound, hidsound;
+	sf::SoundBuffer winsoundbuffer, inrectsoundbuffer, allrectsoundbuffer, wrongsoundbuffer, arrowsoundbuffer, hidsoundbuffer, tostartsoundbuffer, startgamesoundbuffer, hoversoundbuffer, clicksoundbuffer;
+	sf::Sound winsound, inrectsound, allrectsound, wrongsound, arrowsound, hidsound, tostartsound, startgamesound, hoversound, clicksound;
 	sf::Font font, font2;
-	sf::Text word_text, result_text, up_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
+	GameText word_text, result_text, up_text, win_text, menu_text, wrong_action_text, word_expl_text, clue_text, restart_text;
 	vector<sf::Text> history, clues;
 	vector<string> history_vs, clue_words;
 	set<char> hidden_letters;
@@ -91,7 +122,7 @@ class Game
 	void lettersInit();
 
 	bool allRectanglesFull();
-	void drawAll(sf::RenderWindow& window);
+	void drawAll(sf::RenderWindow&);
 	bool isAnySpriteContainMousePos();
 	bool isAnySpriteinRect();
 	void resetCurrentSprite();
@@ -111,14 +142,15 @@ class Game
 	void nextWordFromSet();
 	void updateSet();
 	void compGuessing();
+	void explTextFormatting(sf::RenderWindow&, sf::Text&, wstring&);
+	void wordExplaining(sf::RenderWindow&);
+	void hoverActions(GameText&, sf::Color, sf::Color, bool);
 
 	void oneTimeLeftActions();
 	void oneTimeRightActions();
 	void actions();
-	void explTextFormatting(sf::RenderWindow& window, sf::Text&, wstring& ws);
-	void wordExplaining(sf::RenderWindow& window);
 
 public:
-	Game(MenuSettings);
-	bool play(sf::RenderWindow& window);
+	Game(Settings);
+	Settings play(sf::RenderWindow& window);
 };
