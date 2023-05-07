@@ -223,7 +223,7 @@ void Game::setText()
 	restart_text.setCharacterSize(22);
 
 	clue_text.setFont(font);
-	clue_text.move(620, 100);
+	clue_text.move((settings.language == Language::RUS ? 610 : 620), 100);
 	clue_text.setString(clword);
 	clue_text.setCharacterSize(20);
 	clue_text.setFillColor(sf::Color::Black);
@@ -571,7 +571,7 @@ void Game::wordExplaining(sf::RenderWindow& window)
 	string fontname = "fonts\\Academy.ttf";
 	if (!font.loadFromFile(fontname))
 		throw runtime_error("GameWindow::wordExplaining(): cannot open a font file " + fontname);
-	wstring ws = filesystem::path(dictionary.word_explanation(word)).wstring();
+	wstring ws = filesystem::path(word + "\n\n" + dictionary.word_explanation(word)).wstring();
 	wstring backstr = settings.language == Language::UKR ? L"Для виходу на попередній екран натисніть Esc або закрийте вікно" : L"Для выхода на предыдущий экран нажмите Esc или закройте окно";
 	sf::Text text{ ws, font, 21 }, back_text{ backstr, font, 20 };
 	explTextFormatting(window, text, ws);
