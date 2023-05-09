@@ -1,17 +1,16 @@
 ﻿#include "Game.h"
 
-Game::Game(MenuSettings ms)
-	: alphabet_size{ 33 },
-	dictionary{ ms.language, ms.letters, ms.level },
-	language{ ms.language },
-	letters{ ms.letters },
-	guesser{ ms.guesser },
+Game::Game(Settings ms)
+	: settings{ ms },
+	alphabet_size{ 33 },
+	dictionary{ settings.language, settings.letters, settings.level },
 	sprite_size{ 64 },
-	word_size{ int(letters) }, fncount{ 0 }, firstsetcount{ 0 },
-	motion{ false }, hiding{ false }, isEmptyFirstSet{ false }, noOptions{ false }, gameover{ false }, sound { true },
+	word_size{ int(settings.letters) }, fncount{ 0 }, firstsetcount{ 0 },
+	motion{ false }, hiding{ false }, isEmptyFirstSet{ false }, noOptions{ false }, gameover{ false },
 	dX{ 0 }, dY{ 0 },
 	pixelPos{ 0, 0 },
-	defsprcolor{ sf::Color::White }, bgcolor{ sf::Color{ 230, 230, 255 } }, hidcolor{ sf::Color{ 255,255,255,45 } }, wincolor{ sf::Color{ 153,255,204 } },
+	defsprcolor{ sf::Color::White }, bgcolor{ sf::Color{ 230, 230, 255 } }, 
+	hidcolor{ sf::Color{ 255,255,255,45 } }, wincolor{ sf::Color{ 153,255,204 } },
 	textures{ alphabet_size },
 	result_textures{ word_size + 1 },
 	myspr{ nullptr },
@@ -19,11 +18,13 @@ Game::Game(MenuSettings ms)
 	word(word_size, ' ')
 {
 	setGame();
-	if (guesser == Guesser::COMPUTER)
+	if (settings.guesser == Guesser::COMPUTER)
 	{
 		strset = dictionary.generate_first_set();
 		nextWordFromSet();
 	}
+	if (settings.sound == SOUND::ON)
+		startgamesound.play();
 }
 
 void Game::setGame()
@@ -58,7 +59,8 @@ void Game::setImages()
 	winimagesprite.move(20, 20);
 	setOneImage("images\\speaker-off.png", soundofftexture, soundsprite);
 	setOneImage("images\\speaker-on.png", soundontexture, soundsprite);
-	soundsprite.move(630, 100);
+	soundsprite.move(650, 650);
+	soundsprite.setTexture(settings.sound == SOUND::OFF ? soundofftexture : soundontexture);
 }
 
 void Game::setOneSound(const std::string& sndname, sf::SoundBuffer& sndbuffer, sf::Sound& snd)
@@ -76,13 +78,17 @@ void Game::setSounds()
 	setOneSound("sounds\\wrong.ogg", wrongsoundbuffer, wrongsound);
 	setOneSound("sounds\\arrow.ogg", arrowsoundbuffer, arrowsound);
 	setOneSound("sounds\\hid.ogg", hidsoundbuffer, hidsound);
+	setOneSound("sounds\\tostart.ogg", tostartsoundbuffer, tostartsound);
+	setOneSound("sounds\\game-start.ogg", startgamesoundbuffer, startgamesound);
+	setOneSound("sounds\\hoveringame.ogg", hoversoundbuffer, hoversound);
+	setOneSound("sounds\\click.ogg", clicksoundbuffer, clicksound);
 }
 
 void Game::setTextures()
 {
 	for (int i = 0; i < alphabet_size; i++)
 	{
-		string lng = language == Language::UKR ? "ukr\\" : "rus\\";
+		string lng = settings.language == Language::UKR ? "ukr\\" : "rus\\";
 		string s = "letters\\" + lng + std::to_string(i) + ".png";
 		textures[i].loadFromFile(s);
 	}
@@ -95,7 +101,7 @@ void Game::setTextures()
 
 void Game::setLetterSprites()
 {
-	int shift = guesser == Guesser::PLAYER ? 0 : 500;
+	int shift = settings.guesser == Guesser::PLAYER ? 0 : 500;
 	for (int i = 0, count = 0; i < 6; i++)
 		for (int j = 0; j < 6; j++)
 		{
@@ -110,10 +116,10 @@ void Game::setLetterSprites()
 void Game::setLetterRectangles()
 {
 	letter_rectangles.assign(word_size, MyRectangleShape{ sf::Vector2f(sprite_size, sprite_size) });
-	for (int i = 0, xr = letters == Letters::THREE ? 150 : 118; i < letter_rectangles.size(); i++)
+	for (int i = 0, xr = settings.letters == Letters::THREE ? 150 : 118; i < letter_rectangles.size(); i++)
 	{
-		letter_rectangles[i].setFillColor(guesser == Guesser::COMPUTER ? sf::Color::White : sf::Color::Yellow);
-		letter_rectangles[i].move(xr + i * sprite_size, 450);
+		letter_rectangles[i].setFillColor(settings.guesser == Guesser::COMPUTER ? sf::Color::White : sf::Color::Yellow);
+		letter_rectangles[i].move(xr + i * (sprite_size + 1), 450);
 		letter_rectangles[i].setOutlineColor(sf::Color::Black);
 		letter_rectangles[i].setOutlineThickness(1.f);
 	}
@@ -121,7 +127,7 @@ void Game::setLetterRectangles()
 
 void Game::setResultSprites(std::vector<MyLetterSprite>& rsprites, int x)
 {
-	int shift = guesser == Guesser::PLAYER ? 400 : 0;
+	int shift = settings.guesser == Guesser::PLAYER ? 400 : 0;
 	for (int i = 0; i <= word_size; i++)
 	{
 		rsprites.push_back(MyLetterSprite{ result_textures[i] });
@@ -133,7 +139,7 @@ void Game::setResultSprites(std::vector<MyLetterSprite>& rsprites, int x)
 void Game::setResultRect(sf::RectangleShape& rect, float x)
 {
 	rect.move(x, 550.f);
-	rect.setFillColor(guesser == Guesser::COMPUTER ? sf::Color::Yellow : sf::Color::White);
+	rect.setFillColor(settings.guesser == Guesser::COMPUTER ? sf::Color::Yellow : sf::Color::White);
 	rect.setOutlineColor(sf::Color::Black);
 	rect.setOutlineThickness(1.f);
 }
@@ -142,8 +148,9 @@ void Game::setResultDot(sf::CircleShape& dot, int y)
 {
 	dot.setRadius(3);
 	dot.setPosition(243, y);
-	dot.setFillColor(sf::Color{ 220,220,220 });
+	dot.setFillColor(sf::Color{128,128,128});
 	dot.setOutlineThickness(1);
+	dot.setOutlineColor(sf::Color::Black);
 }
 
 void Game::setFonts()
@@ -157,16 +164,16 @@ void Game::setFonts()
 
 void Game::setText()
 {
-	wstring congrats = language == Language::UKR ? L"Перемога!" : L"Победа!";
+	wstring congrats = settings.language == Language::UKR ? L"Перемога!" : L"Победа!";
 	wstring wrword;
-	if (guesser == Guesser::PLAYER)
-		wrword = language == Language::UKR ? L"Такого слова немає в базі даних гри!" : L"Такого слова нет в базе данных игры!";
+	if (settings.guesser == Guesser::PLAYER)
+		wrword = settings.language == Language::UKR ? L"Такого слова немає в базі даних гри!" : L"Такого слова нет в базе данных игры!";
 	else
-		wrword = language == Language::UKR ? L"Друга цифра не може бути більше першої!" : L"Вторая цифра не может быть больше первой!";
+		wrword = settings.language == Language::UKR ? L"Друга цифра не може бути більше першої!" : L"Вторая цифра не может быть больше первой!";
 	wstring clword;
-	if (guesser == Guesser::PLAYER)
-		clword = language == Language::UKR ? L"Підказка" : L"Подсказка";
-	wstring explword = language == Language::UKR ? L"Показати тлумачення слова" : L"Показать толкование слова";
+	if (settings.guesser == Guesser::PLAYER)
+		clword = settings.language == Language::UKR ? L"Підказка" : L"Подсказка";
+	wstring explword = settings.language == Language::UKR ? L"Показати тлумачення слова" : L"Показать толкование слова";
 
 	word_text.setFont(font);
 	word_text.setFillColor(sf::Color::Blue);
@@ -209,23 +216,23 @@ void Game::setText()
 	word_expl_text.setString(explword);
 	word_expl_text.setCharacterSize(24);
 
-	clue_text.setFont(font);
-	clue_text.move(600, 660);
-	clue_text.setString(clword);
-	clue_text.setCharacterSize(20);
-	clue_text.setFillColor(sf::Color::Black);
-
 	restart_text.setFont(font);
 	restart_text.setFillColor(sf::Color::Black);
 	restart_text.move(620, 60);
 	restart_text.setString(L"Рестарт");
 	restart_text.setCharacterSize(22);
+
+	clue_text.setFont(font);
+	clue_text.move((settings.language == Language::RUS ? 610 : 620), 100);
+	clue_text.setString(clword);
+	clue_text.setCharacterSize(20);
+	clue_text.setFillColor(sf::Color::Black);
 }
 
 void Game::lettersInit()
 {
 	int count = -32;
-	if (language == Language::UKR)
+	if (settings.language == Language::UKR)
 		for (int i = 0; i < alphabet_size; i++)
 		{
 			if (i == 4)
@@ -245,7 +252,7 @@ void Game::lettersInit()
 			else
 				letter_sprites[i].setLetter(char(count++));
 		}
-	else if (language == Language::RUS)
+	else if (settings.language == Language::RUS)
 		for (int i = 0; i < alphabet_size; i++)
 		{
 			if (i == 6)
@@ -260,7 +267,7 @@ void Game::lettersInit()
 bool Game::allRectanglesFull()
 {
 	std::vector<MyRectangleShape>* vspr = nullptr;
-	vspr = guesser == Guesser::PLAYER ? &letter_rectangles : &result_rectangles;
+	vspr = settings.guesser == Guesser::PLAYER ? &letter_rectangles : &result_rectangles;
 	for (int i = 0; i < vspr->size(); i++)
 		if (vspr->at(i).getFilling() == false)
 			return false;
@@ -309,8 +316,8 @@ void Game::drawAll(sf::RenderWindow& window)
 bool Game::isAnySpriteContainMousePos()
 {
 	std::vector<MyLetterSprite>* vspr = nullptr;
-	vspr = guesser == Guesser::PLAYER ? &letter_sprites : &result_sprites.first;
-	const int n = guesser == Guesser::PLAYER ? 1 : 2;
+	vspr = settings.guesser == Guesser::PLAYER ? &letter_sprites : &result_sprites.first;
+	const int n = settings.guesser == Guesser::PLAYER ? 1 : 2;
 	for (int k = 1; k <= n; k++)
 	{
 		if (k == 2)	vspr = &result_sprites.second;
@@ -329,22 +336,28 @@ bool Game::isAnySpriteContainMousePos()
 bool Game::isAnySpriteinRect()
 {
 	std::vector<MyRectangleShape>* vrects = nullptr;
-	vrects = guesser == Guesser::PLAYER ? &letter_rectangles : &result_rectangles;
+	vrects = settings.guesser == Guesser::PLAYER ? &letter_rectangles : &result_rectangles;
 	motion = false;
 	myspr->setColor(defsprcolor);
-	if (guesser == Guesser::PLAYER && myspr->getLetterHiding())
+	if (settings.guesser == Guesser::PLAYER && myspr->getLetterHiding())
 		myspr->setColor(hidcolor);
 	int i = 0;
 	for (; i < vrects->size(); i++)
 		if (vrects->at(i).getGlobalBounds().contains(pixelPos.x, pixelPos.y) && !vrects->at(i).getFilling())
 		{
 			if (myspr->getConnectedRectangle())
+			{
 				myspr->getConnectedRectangle()->setFilling(false);
+				myspr->getConnectedRectangle()->setFillColor(sf::Color::Yellow);
+			}
 			myspr->setPosition(vrects->at(i).getPosition().x, vrects->at(i).getPosition().y);
 			myspr->connectRectangle(&vrects->at(i));
 			vrects->at(i).setFilling(true);
-			if (guesser == Guesser::PLAYER)
+			if (settings.guesser == Guesser::PLAYER)
+			{
 				word.at(i) = myspr->getLetter();
+				vrects->at(i).setFillColor(defsprcolor);
+			}
 			else
 				!i ? result.first = myspr->getNumber() : result.second = myspr->getNumber();
 			break;
@@ -358,7 +371,10 @@ void Game::resetCurrentSprite()
 	{
 		myspr->setStartPosition();
 		if (myspr->getConnectedRectangle())
+		{
 			myspr->getConnectedRectangle()->setFilling(false);
+			myspr->getConnectedRectangle()->setFillColor(sf::Color::Yellow);
+		}
 		myspr->connectRectangle(nullptr);
 	}
 }
@@ -381,7 +397,7 @@ void Game::setSpriteHidingOptions()
 	}
 	else
 	{
-		if (sound)
+	if (settings.sound == SOUND::ON)
 			hidsound.play();
 		myspr->setColor(hidcolor);
 		myspr->setLetterHiding(true);
@@ -401,7 +417,11 @@ void Game::resetResultSprites()
 void Game::resetLetterSprites()
 {
 	for (int i = 0; i < letter_sprites.size(); i++)
+	{
 		letter_sprites[i].setStartPosition();
+		if (letter_sprites[i].getConnectedRectangle())
+			letter_sprites[i].getConnectedRectangle()->setFillColor(sf::Color::Yellow);
+	}
 }
 
 void Game::resetRectangleLetters()
@@ -421,7 +441,7 @@ void Game::resetResultRectNumbers()
 
 void Game::resetAfterArrowClick()
 {
-	if (sound)
+	if (settings.sound == SOUND::ON)
 		arrowsound.play();
 	resetCurrentSprite();
 	resetLetterSprites();
@@ -492,7 +512,7 @@ void Game::winHandling()
 	result_sprites.first[result.first].setStartCoords(result_rectangles[0].getPosition().x, result_rectangles[0].getPosition().y);
 	result_sprites.second[result.second].setStartCoords(result_rectangles[1].getPosition().x, result_rectangles[1].getPosition().y);
 
-	if (sound) 
+	if (settings.sound == SOUND::ON)
 		winsound.play();
 }
 
@@ -508,12 +528,12 @@ void Game::updateClueWords()
 	for (int i = 0; i < clues.size(); i++)
 	{
 		clues[i] = sf::Text{ filesystem::path(clue_words[i]).wstring(), font, 18 };
-		clues[i].move(630, 630 - (i * 20));
+		clues[i].move(640, 130 + (i * 20));
 		clues[i].setFillColor(sf::Color::Black);
 	}
 	if (clue_words.size() == 1 && clue_words[0].size() > word.size())	//no words found
 	{
-		clues[0].setPosition(570, 630);
+		clues[0].setPosition(570, 130);
 		clues[0].setFillColor(sf::Color::Red);
 	}
 }
@@ -523,151 +543,6 @@ void Game::hideClues()
 	for (sf::Text& c : clues)
 		c.setFillColor(!gameover ? bgcolor : wincolor);
 }
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-
-bool Game::play(sf::RenderWindow& window)
-{
-	while (window.isOpen())
-	{
-		pixelPos = sf::Mouse::getPosition(window);
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-				window.close();
-			if (event.type == sf::Event::MouseButtonPressed)
-			{
-				if (event.key.code == sf::Mouse::Left)
-					if (menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
-						return false;
-					else if (restart_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
-						return true;
-					else if (soundsprite.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
-					{
-						sound = sound == false ? true : false;
-						soundsprite.setTexture(sound == false ? soundofftexture : soundontexture);
-					}
-					else if (clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
-						updateClueWords();
-					else if (up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
-						resetAfterArrowClick();
-					else if (!gameover && isAnySpriteContainMousePos())
-						motion = true;
-
-				if (event.key.code == sf::Mouse::Right)
-					if (!gameover && isAnySpriteContainMousePos())
-						hiding = true;
-			}
-			if (event.type == sf::Event::MouseButtonReleased)
-			{
-				if (event.key.code == sf::Mouse::Left && word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
-					if (guesser == Guesser::COMPUTER || allRectanglesFull() && !dictionary.is_wrong_word(word))
-						wordExplaining(window);
-				if (event.key.code == sf::Mouse::Left && motion)
-					oneTimeLeftActions();
-				if (event.key.code == sf::Mouse::Right && hiding)
-					oneTimeRightActions();
-			}
-		}
-		actions();
-		window.clear(!gameover ? bgcolor : wincolor);
-		drawAll(window);
-		window.display();
-	}
-}
-
-//------------------------------------------------------------------------------------------------
-
-void Game::oneTimeLeftActions()
-{
-	if (!isAnySpriteinRect())
-		resetCurrentSprite();
-	else if (sound)
-		inrectsound.play();
-	if (guesser == Guesser::PLAYER)
-	{
-		if (allRectanglesFull())
-		{
-			if (!dictionary.is_wrong_word(word))
-			{
-				resultHandling();
-				hideClues();
-				if (sound && !gameover)
-					allrectsound.play();
-			}
-			else if (sound)
-				wrongsound.play();
-		}
-		else
-		{
-			resetResultSprites();
-			resetRectangleLetters();
-		}
-	}
-	else compGuessing();
-}
-
-//------------------------------------------------------------------------------------------------
-
-void Game::oneTimeRightActions()
-{
-	setSpriteHidingOptions();
-	resetCurrentSprite();
-	hiding = false;
-	if (!allRectanglesFull())
-	{
-		resetResultSprites();
-		resetRectangleLetters();
-	}
-}
-
-//------------------------------------------------------------------------------------------------
-
-void Game::actions()
-{
-	menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? menu_text.setFillColor(sf::Color::Blue) : menu_text.setFillColor(sf::Color::Black);
-	restart_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? restart_text.setFillColor(sf::Color::Blue) : restart_text.setFillColor(sf::Color::Black);
-	clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? clue_text.setFillColor(sf::Color::Blue) : clue_text.setFillColor(sf::Color::Black);
-	wrong_action_text.setFillColor(bgcolor);
-	if (guesser == Guesser::COMPUTER)
-	{
-		word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color{0,128,255});
-		if (allRectanglesFull())
-			wrong_action_text.setFillColor(result.second > result.first ? sf::Color::Red : bgcolor);
-		else
-			resetResultRectNumbers();
-
-		if (noOptions)
-		{
-			wrong_action_text.setString(language == Language::UKR
-				? "В базі немає такого слова, як Ви загадали, або Ви давали неправильні результати!"
-				: "В базе нет такого слова, как Вы загадали, или Вы давали неправильные результаты!");
-			wrong_action_text.setFillColor(sf::Color::Red);
-			resetLetterSprites();
-		}
-	}
-	else
-	{
-		if (allRectanglesFull())
-		{
-			up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? up_text.setFillColor(sf::Color::Blue) : up_text.setFillColor(sf::Color::Green);
-			if (!dictionary.is_wrong_word(word))
-				word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y) ? word_expl_text.setFillColor(sf::Color::Blue) : word_expl_text.setFillColor(sf::Color{ 0,128,255 });
-			else
-				wrong_action_text.setFillColor(sf::Color::Red);
-		}
-		else
-		{
-			word_expl_text.setFillColor(bgcolor);
-			up_text.setFillColor(bgcolor);
-		}
-	}
-	if (motion) moveSprite();
-}
-
-//------------------------------------------------------------------------------------------------
 
 void Game::explTextFormatting(sf::RenderWindow& window, sf::Text& text, wstring& ws)
 {
@@ -690,16 +565,14 @@ void Game::explTextFormatting(sf::RenderWindow& window, sf::Text& text, wstring&
 	text.setFillColor(sf::Color::Black);
 }
 
-//------------------------------------------------------------------------------------------------
-
 void Game::wordExplaining(sf::RenderWindow& window)
 {
 	sf::Font font;
 	string fontname = "fonts\\Academy.ttf";
 	if (!font.loadFromFile(fontname))
 		throw runtime_error("GameWindow::wordExplaining(): cannot open a font file " + fontname);
-	wstring ws = filesystem::path(dictionary.word_explanation(word)).wstring();
-	wstring backstr = language == Language::UKR ? L"Для виходу на попередній екран натисніть Esc або закрийте вікно" : L"Для выхода на предыдущий экран нажмите Esc или закройте окно";
+	wstring ws = filesystem::path(word + "\n\n" + dictionary.word_explanation(word)).wstring();
+	wstring backstr = settings.language == Language::UKR ? L"Для виходу на попередній екран натисніть Esc або закрийте вікно" : L"Для выхода на предыдущий экран нажмите Esc или закройте окно";
 	sf::Text text{ ws, font, 21 }, back_text{ backstr, font, 20 };
 	explTextFormatting(window, text, ws);
 	back_text.move(50, window.getSize().y - 50);
@@ -722,13 +595,11 @@ void Game::wordExplaining(sf::RenderWindow& window)
 	}
 }
 
-//------------------------------------------------------------------------------------------------
-
 void Game::compGuessing()
 {
 	if (allRectanglesFull() && result.first >= result.second)
 	{
-		if (++firstsetcount == (letters == Letters::THREE ? (int)FirstSetSizeFor::THREE : (int)FirstSetSizeFor::FOUR))
+		if (++firstsetcount == (settings.letters == Letters::THREE ? (int)FirstSetSizeFor::THREE : (int)FirstSetSizeFor::FOUR))
 		{
 			fncount = word_size + 1;
 			isEmptyFirstSet = true;
@@ -769,8 +640,6 @@ void Game::compGuessing()
 	}
 }
 
-//------------------------------------------------------------------------------------------------
-
 void Game::nextWordFromSet()
 {
 	if (strset.begin() != strset.end())
@@ -786,8 +655,6 @@ void Game::nextWordFromSet()
 		noOptions = true;
 }
 
-//------------------------------------------------------------------------------------------------
-
 void Game::updateSet()
 {
 	strset.clear();
@@ -801,6 +668,174 @@ void Game::updateSet()
 		if (cnt == comp_words.size())
 			strset.insert(s);
 	}
+}
+
+//------------------------------------------------------------------------------
+
+Settings Game::play(sf::RenderWindow& window)
+{
+	while (window.isOpen())
+	{
+		pixelPos = sf::Mouse::getPosition(window);
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed)
+				window.close();
+			if (event.type == sf::Event::MouseButtonPressed)
+			{
+				if (event.key.code == sf::Mouse::Left)
+					if (menu_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+					{
+						settings.restart = false;
+						return settings;
+					}
+					else if (restart_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+					{
+						settings.restart = true;
+						return settings;
+					}
+					else if (soundsprite.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+					{
+						settings.sound = settings.sound == SOUND::OFF ? SOUND::ON : SOUND::OFF;
+						soundsprite.setTexture(settings.sound == SOUND::OFF ? soundofftexture : soundontexture);
+					}
+					else if (clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+						updateClueWords();
+					else if (up_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+						resetAfterArrowClick();
+					else if (!gameover && isAnySpriteContainMousePos())
+						motion = true;
+
+				if (event.key.code == sf::Mouse::Right)
+					if (!gameover && isAnySpriteContainMousePos())
+						hiding = true;
+			}
+			if (event.type == sf::Event::MouseButtonReleased)
+			{
+				if (event.key.code == sf::Mouse::Left && word_expl_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+					if (settings.guesser == Guesser::COMPUTER || allRectanglesFull() && !dictionary.is_wrong_word(word))
+						wordExplaining(window);
+				if (event.key.code == sf::Mouse::Left && motion)
+					oneTimeLeftActions();
+				if (event.key.code == sf::Mouse::Right && hiding)
+					oneTimeRightActions();
+			}
+		}
+		actions();
+		window.clear(!gameover ? bgcolor : wincolor);
+		drawAll(window);
+		window.display();
+	}
+}
+
+//------------------------------------------------------------------------------
+
+void Game::oneTimeLeftActions()
+{
+	if (!isAnySpriteinRect())
+	{
+		resetCurrentSprite();
+		if (settings.sound == SOUND::ON)
+			tostartsound.play();
+	}
+	else if (settings.sound == SOUND::ON)
+		inrectsound.play();
+	if (settings.guesser == Guesser::PLAYER)
+	{
+		if (allRectanglesFull())
+		{
+			if (!dictionary.is_wrong_word(word))
+			{
+				resultHandling();
+				hideClues();
+				if (settings.sound == SOUND::ON && !gameover)
+					allrectsound.play();
+			}
+			else if (settings.sound == SOUND::ON)
+				wrongsound.play();
+		}
+		else
+		{
+			resetResultSprites();
+			resetRectangleLetters();
+		}
+	}
+	else compGuessing();
+}
+
+void Game::oneTimeRightActions()
+{
+	setSpriteHidingOptions();
+	resetCurrentSprite();
+	hiding = false;
+	if (!allRectanglesFull())
+	{
+		resetResultSprites();
+		resetRectangleLetters();
+	}
+}
+
+void Game::hoverActions(GameText& text, sf::Color defcolor, sf::Color hovercolor, bool sound)
+{
+	if (text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+	{
+		text.setFillColor(hovercolor);
+		if (sound && !text.underMouse && settings.sound == SOUND::ON)
+		{
+			hoversound.play();
+			text.underMouse = true;
+		}
+	}
+	else 
+	{
+		text.setFillColor(defcolor);
+		text.underMouse = false;
+	}
+
+}
+
+void Game::actions()
+{
+	hoverActions(menu_text, sf::Color::Black, sf::Color::Blue, true);
+	hoverActions(restart_text, sf::Color::Black, sf::Color::Blue, true);
+	hoverActions(clue_text, sf::Color::Black, sf::Color::Blue, true);
+	wrong_action_text.setFillColor(bgcolor);
+
+	if (settings.guesser == Guesser::COMPUTER)
+	{
+		hoverActions(word_expl_text, sf::Color{ 0,128,255 }, sf::Color::Blue, true);
+		if (allRectanglesFull())
+			wrong_action_text.setFillColor(result.second > result.first ? sf::Color::Red : bgcolor);
+		else
+			resetResultRectNumbers();
+
+		if (noOptions)
+		{
+			wrong_action_text.setString(settings.language == Language::UKR
+				? "В базі немає такого слова, як Ви загадали, або Ви давали неправильні результати!"
+				: "В базе нет такого слова, как Вы загадали, или Вы давали неправильные результаты!");
+			wrong_action_text.setFillColor(sf::Color::Red);
+			resetLetterSprites();
+		}
+	}
+	else
+	{
+		if (allRectanglesFull())
+		{
+			hoverActions(up_text, sf::Color::Green, sf::Color::Blue, false);
+			if (!dictionary.is_wrong_word(word))
+				hoverActions(word_expl_text, sf::Color{ 0,128,255 }, sf::Color::Blue, true);
+			else
+				wrong_action_text.setFillColor(sf::Color::Red);
+		}
+		else
+		{
+			word_expl_text.setFillColor(bgcolor);
+			up_text.setFillColor(bgcolor);
+		}
+	}
+	if (motion) moveSprite();
 }
 
 //------------------------------------------------------------------------------------------------

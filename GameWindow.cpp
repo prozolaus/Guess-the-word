@@ -5,33 +5,31 @@
 GameWindow::GameWindow(sf::VideoMode vm, const sf::String wndwname, sf::Uint32 style)
 	: sf::RenderWindow(vm, wndwname, style)
 {
-	restart = false;
 	windowname = wndwname;
 }
 
 //------------------------------------------------------------------------------------------------
 
-MenuSettings GameWindow::menu()
+Settings GameWindow::showmenu(Menu& menu)
 {
-	Menu menu(getSize().x, getSize().y);
-
 	while (isOpen())
 	{
+		menu.setMousePos(sf::Mouse::getPosition(*this));
 		sf::Event event;
 		while (pollEvent(event))
+		{
 			if (event.type == sf::Event::Closed)
 				close();
-		menu.setMousePos(sf::Mouse::getPosition(*this));
+			if (event.type == sf::Event::MouseButtonPressed && event.key.code == sf::Mouse::Left)
+			{
+				if (menu.isStartGame())
+					return menu.getMenuSettings();
+				menu.mouseClickHandling();
+			}
+		}
 		clear(sf::Color::White);
 		menu.setAllTextBlack();
 		menu.changeColorOnHover();
-
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-		{
-			if (menu.isStartGame()) 
-				break;
-			menu.mouseClickHandling();
-		}
 		menu.drawMenu(*this);
 		display();
 	}
@@ -58,7 +56,7 @@ void GameWindow::wait(Language lang)
 
 //------------------------------------------------------------------------------------------------
 
-void GameWindow::updateTitle(MenuSettings ms)
+void GameWindow::updateTitle(Settings ms)
 {
 	string lang = (ms.language == Language::UKR) ? "UKR" : "RUS";
 	string lrs = (ms.letters == Letters::THREE) ? "3" : "4";
@@ -80,17 +78,22 @@ void GameWindow::updateTitle(MenuSettings ms)
 
 void GameWindow::runGame()
 {
-	MenuSettings ms;
+	Settings ms;
+	Menu menu(getSize().x, getSize().y);
+	bool firstgame = true;
 	while (isOpen())
 	{
-		if (!restart)
+		if (!ms.restart)
 		{
-			ms = menu();
+			if (!firstgame)
+				menu.set(ms);
+			ms = showmenu(menu);
+			firstgame = false;
 			updateTitle(ms);
 		}
 		wait(ms.language);
 		Game game{ ms };
-		restart = game.play(*this);
+		ms = game.play(*this);
 	}
 }
 

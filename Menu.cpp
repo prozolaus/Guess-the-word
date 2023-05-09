@@ -9,6 +9,7 @@ MenuText::MenuText(const string& text) : Text()
 	Text::setString(text);
 	Text::setFillColor(sf::Color::Black);
 	Text::setCharacterSize(25);
+	underMouse = false;
 }
 
 void MenuText::setFont(const sf::Font& f)
@@ -44,6 +45,62 @@ Menu::Menu(unsigned int window_width, unsigned int window_height)
 	if (!bgtexture.loadFromFile(fname))
 		throw runtime_error("Menu constructor: cannot open a background file " + fname);
 	background.setTexture(bgtexture);
+	mset.sound = SOUND::ON;
+	setSounds();
+	setImages();
+}
+
+void Menu::set(Settings ms)
+{
+	mset = ms;
+	if (mset.language == Language::UKR)
+	{
+		ua.setFillColor(sf::Color::Blue);
+		UA_lang = true;
+		changeLangToUKR();
+	}
+	else
+	{
+		ru.setFillColor(sf::Color::Blue);
+		RU_lang = true;
+		changeLangToRUS();
+	}
+	if (mset.guesser == Guesser::PLAYER)
+	{
+		player.setFillColor(sf::Color::Blue);
+		player_guesses = true;
+	}
+	else
+	{
+		computer.setFillColor(sf::Color::Blue);
+		comp_guesses = true;
+	}
+	if (mset.letters == Letters::THREE)
+	{
+		three.setFillColor(sf::Color::Blue);
+		three_ls = true;
+	}
+	else
+	{
+		four.setFillColor(sf::Color::Blue);
+		four_ls = true;
+	}
+	if (mset.level == Level::SCHOOL)
+	{
+		school.setFillColor(sf::Color::Blue);
+		school_lvl = true;
+	}
+	else if (mset.level == Level::NORMAL)
+	{
+		normal.setFillColor(sf::Color::Blue);
+		normal_lvl = true;
+	}
+	else if (mset.level == Level::ERUDITE)
+	{
+		erudite.setFillColor(sf::Color::Blue);
+		erudite_lvl = true;
+	}
+	soundsprite.setTexture(mset.sound == SOUND::ON ? soundontexture : soundofftexture);
 }
 
 void Menu::changeLangToUKR()
@@ -111,7 +168,19 @@ void Menu::setAllTextBlack()
 void Menu::colorChanging(MenuText& mt, bool b)
 {
 	if (mt.getGlobalBounds().contains(pos.x, pos.y))
-		b ? mt.setFillColor(sf::Color::Blue) : mt.setFillColor(sf::Color::Green);
+	{
+		if (b)
+			mt.setFillColor(sf::Color::Blue);
+		else
+		{
+			if (!mt.underMouse && mset.sound == SOUND::ON)
+					hoversound.play();
+			mt.setFillColor(sf::Color::Green);
+		}
+		mt.underMouse = true;
+	}
+	else
+		mt.underMouse = false;
 }
 
 void Menu::changeColorOnHover()
@@ -140,6 +209,8 @@ bool Menu::isStartGame()
 
 void Menu::mouseClickHandling()
 {
+	if (mset.sound == SOUND::ON)
+		clicksound.play();
 	if (ua.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		ua.setFillColor(sf::Color::Blue);
@@ -148,7 +219,7 @@ void Menu::mouseClickHandling()
 		RU_lang = false;
 		changeLangToUKR();
 	}
-	if (ru.getGlobalBounds().contains(pos.x, pos.y))
+	else if (ru.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		ru.setFillColor(sf::Color::Blue);
 		mset.language = Language::RUS;
@@ -156,35 +227,35 @@ void Menu::mouseClickHandling()
 		UA_lang = false;
 		changeLangToRUS();
 	}
-	if (player.getGlobalBounds().contains(pos.x, pos.y))
+	else if (player.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		player.setFillColor(sf::Color::Blue);
 		mset.guesser = Guesser::PLAYER;
 		player_guesses = true;
 		comp_guesses = false;
 	}
-	if (computer.getGlobalBounds().contains(pos.x, pos.y))
+	else if (computer.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		computer.setFillColor(sf::Color::Blue);
 		mset.guesser = Guesser::COMPUTER;
 		comp_guesses = true;
 		player_guesses = false;
 	}
-	if (three.getGlobalBounds().contains(pos.x, pos.y))
+	else if (three.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		three.setFillColor(sf::Color::Blue);
 		mset.letters = Letters::THREE;
 		three_ls = true;
 		four_ls = false;
 	}
-	if (four.getGlobalBounds().contains(pos.x, pos.y))
+	else if (four.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		four.setFillColor(sf::Color::Blue);
 		mset.letters = Letters::FOUR;
 		four_ls = true;
 		three_ls = false;
 	}
-	if (school.getGlobalBounds().contains(pos.x, pos.y))
+	else if (school.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		school.setFillColor(sf::Color::Blue);
 		mset.level = Level::SCHOOL;
@@ -192,7 +263,7 @@ void Menu::mouseClickHandling()
 		normal_lvl = false;
 		erudite_lvl = false;
 	}
-	if (normal.getGlobalBounds().contains(pos.x, pos.y))
+	else if (normal.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		normal.setFillColor(sf::Color::Blue);
 		mset.level = Level::NORMAL;
@@ -200,7 +271,7 @@ void Menu::mouseClickHandling()
 		erudite_lvl = false;
 		school_lvl = false;
 	}
-	if (erudite.getGlobalBounds().contains(pos.x, pos.y))
+	else if (erudite.getGlobalBounds().contains(pos.x, pos.y))
 	{
 		erudite.setFillColor(sf::Color::Blue);
 		mset.level = Level::ERUDITE;
@@ -208,12 +279,22 @@ void Menu::mouseClickHandling()
 		school_lvl = false;
 		normal_lvl = false;
 	}
+	else
+		clicksound.stop();
+	if (soundsprite.getGlobalBounds().contains(pos.x, pos.y))
+	{
+		mset.sound = mset.sound == SOUND::OFF ? SOUND::ON : SOUND::OFF;
+		soundsprite.setTexture(mset.sound == SOUND::OFF ? soundofftexture : soundontexture);
+		if (mset.sound == SOUND::ON)
+			clicksound.play();
+	}
 }
 
 void Menu::drawMenu(sf::RenderWindow& window)
 {
 	window.clear(sf::Color{ 255, 255, 102 });
 	window.draw(background);
+	window.draw(soundsprite);
 	window.draw(start);
 	window.draw(lang);
 	window.draw(ua);
@@ -231,4 +312,31 @@ void Menu::drawMenu(sf::RenderWindow& window)
 		window.draw(normal);
 		window.draw(erudite);
 	}
+}
+
+void Menu::setOneSound(const std::string& sndname, sf::SoundBuffer& sndbuffer, sf::Sound& snd)
+{
+	if (!sndbuffer.loadFromFile(sndname))
+		throw runtime_error("GameWindow::setOneSound(): Cannot open an sound file " + sndname);
+	snd.setBuffer(sndbuffer);
+}
+
+void Menu::setSounds()
+{
+	setOneSound("sounds\\hover.ogg", hoversoundbuffer, hoversound);
+	setOneSound("sounds\\click.ogg", clicksoundbuffer, clicksound);
+}
+
+void Menu::setOneImage(const std::string& imgname, sf::Texture& imgtexture, sf::Sprite& imgsprite)
+{
+	if (!imgtexture.loadFromFile(imgname))
+		throw runtime_error("GameWindow::setOneImage(): Cannot open an image file " + imgname);
+	imgsprite.setTexture(imgtexture);
+}
+
+void Menu::setImages()
+{
+	setOneImage("images\\speaker-off.png", soundofftexture, soundsprite);
+	setOneImage("images\\speaker-on.png", soundontexture, soundsprite);
+	soundsprite.setPosition(650, 650);
 }

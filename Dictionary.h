@@ -40,14 +40,7 @@ enum class FirstSetSizeFor
 	FOUR = 7
 };
 
-struct MenuSettings
-{
-	Language language;
-	Letters letters;
-	Level level;
-	Guesser guesser;
-	MenuSettings() : language{ Language::UKR }, letters{ Letters::THREE }, level{ Level::SCHOOL }, guesser{ Guesser::PLAYER} {}
-};
+
 
 class Dictionary
 {

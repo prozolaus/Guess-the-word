@@ -3,15 +3,14 @@
 
 class GameWindow : public sf::RenderWindow
 {
-	bool restart;
 	string windowname;
-	MenuSettings menu();
+	Settings showmenu(Menu&);
 	void wait(Language lang);
 
 public:
 	GameWindow(sf::VideoMode, const sf::String, sf::Uint32);
 	void runGame();
-	void updateTitle(MenuSettings ms);
+	void updateTitle(Settings ms);
 };
 
 //-----------------------------------------------------------------------------
