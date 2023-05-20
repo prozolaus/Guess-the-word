@@ -13,8 +13,10 @@ try
 catch (const std::exception& e)
 {
 	std::cerr << "\nError: " << e.what() << endl;
+	//MessageBox(NULL, e.what(), "Error!", MB_ICONERROR | MB_OK);
 }
 catch (...)
 {
 	std::cerr << "\nUnknown error!\n\n";
+	//MessageBox(NULL, "Unknown error!", "Error!", MB_ICONERROR | MB_OK);
 }
