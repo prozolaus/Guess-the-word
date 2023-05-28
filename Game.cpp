@@ -578,18 +578,31 @@ void Game::wordExplaining(sf::RenderWindow& window)
 	back_text.move(50, window.getSize().y - 50);
 	back_text.setFillColor(sf::Color::Red);
 
+	string ukrref = string("start ").append("http://sum.in.ua/?swrd=").append(word);	// A Ukrainian online dictionary
+	wstring refstr = settings.language == Language::UKR ? L"Переглянути тлумачення на сайті sum.in.ua" : L"";
+	sf::Text dictreftext{ refstr, font, 21 };
+	dictreftext.setFillColor(sf::Color::Blue);
+	dictreftext.setPosition(300, 20);
+	dictreftext.setStyle(sf::Text::Underlined);
+
 	while (window.isOpen())
 	{
+		pixelPos = sf::Mouse::getPosition(window);
 		sf::Event event;
 		while (window.pollEvent(event))
 			if (event.type == sf::Event::Closed)
 				return;
+
+		if (event.type == sf::Event::MouseButtonPressed)
+			if (event.key.code == sf::Mouse::Left && dictreftext.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
+				system(ukrref.c_str());	// launching a web page in a browser
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 			break;
 
 		window.clear(bgcolor);
 		window.draw(text);
+		window.draw(dictreftext);
 		window.draw(back_text);
 		window.display();
 	}
