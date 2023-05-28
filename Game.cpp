@@ -23,7 +23,7 @@ Game::Game(Settings ms)
 		strset = dictionary.generate_first_set();
 		nextWordFromSet();
 	}
-	if (settings.sound == SOUND::ON)
+	if (settings.sound == GameSound::ON)
 		startgamesound.play();
 }
 
@@ -60,7 +60,7 @@ void Game::setImages()
 	setOneImage("images\\speaker-off.png", soundofftexture, soundsprite);
 	setOneImage("images\\speaker-on.png", soundontexture, soundsprite);
 	soundsprite.move(650, 650);
-	soundsprite.setTexture(settings.sound == SOUND::OFF ? soundofftexture : soundontexture);
+	soundsprite.setTexture(settings.sound == GameSound::OFF ? soundofftexture : soundontexture);
 }
 
 void Game::setOneSound(const std::string& sndname, sf::SoundBuffer& sndbuffer, sf::Sound& snd)
@@ -397,7 +397,7 @@ void Game::setSpriteHidingOptions()
 	}
 	else
 	{
-	if (settings.sound == SOUND::ON)
+	if (settings.sound == GameSound::ON)
 			hidsound.play();
 		myspr->setColor(hidcolor);
 		myspr->setLetterHiding(true);
@@ -441,7 +441,7 @@ void Game::resetResultRectNumbers()
 
 void Game::resetAfterArrowClick()
 {
-	if (settings.sound == SOUND::ON)
+	if (settings.sound == GameSound::ON)
 		arrowsound.play();
 	resetCurrentSprite();
 	resetLetterSprites();
@@ -512,7 +512,7 @@ void Game::winHandling()
 	result_sprites.first[result.first].setStartCoords(result_rectangles[0].getPosition().x, result_rectangles[0].getPosition().y);
 	result_sprites.second[result.second].setStartCoords(result_rectangles[1].getPosition().x, result_rectangles[1].getPosition().y);
 
-	if (settings.sound == SOUND::ON)
+	if (settings.sound == GameSound::ON)
 		winsound.play();
 }
 
@@ -697,8 +697,8 @@ Settings Game::play(sf::RenderWindow& window)
 					}
 					else if (soundsprite.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 					{
-						settings.sound = settings.sound == SOUND::OFF ? SOUND::ON : SOUND::OFF;
-						soundsprite.setTexture(settings.sound == SOUND::OFF ? soundofftexture : soundontexture);
+						settings.sound = settings.sound == GameSound::OFF ? GameSound::ON : GameSound::OFF;
+						soundsprite.setTexture(settings.sound == GameSound::OFF ? soundofftexture : soundontexture);
 					}
 					else if (clue_text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 						updateClueWords();
@@ -736,10 +736,10 @@ void Game::oneTimeLeftActions()
 	if (!isAnySpriteinRect())
 	{
 		resetCurrentSprite();
-		if (settings.sound == SOUND::ON)
+		if (settings.sound == GameSound::ON)
 			tostartsound.play();
 	}
-	else if (settings.sound == SOUND::ON)
+	else if (settings.sound == GameSound::ON)
 		inrectsound.play();
 	if (settings.guesser == Guesser::PLAYER)
 	{
@@ -749,10 +749,10 @@ void Game::oneTimeLeftActions()
 			{
 				resultHandling();
 				hideClues();
-				if (settings.sound == SOUND::ON && !gameover)
+				if (settings.sound == GameSound::ON && !gameover)
 					allrectsound.play();
 			}
-			else if (settings.sound == SOUND::ON)
+			else if (settings.sound == GameSound::ON)
 				wrongsound.play();
 		}
 		else
@@ -781,7 +781,7 @@ void Game::hoverActions(GameText& text, sf::Color defcolor, sf::Color hovercolor
 	if (text.getGlobalBounds().contains(pixelPos.x, pixelPos.y))
 	{
 		text.setFillColor(hovercolor);
-		if (sound && !text.underMouse && settings.sound == SOUND::ON)
+		if (sound && !text.underMouse && settings.sound == GameSound::ON)
 		{
 			hoversound.play();
 			text.underMouse = true;

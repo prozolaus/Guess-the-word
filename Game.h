@@ -2,10 +2,11 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "Dictionary.h"
+#include <filesystem>	//C++17
 
 //----------------------------------------------------------------------------------------------------
 
-enum class SOUND
+enum class GameSound
 {
 	OFF,
 	ON
@@ -19,12 +20,12 @@ struct Settings
 	Letters letters;
 	Level level;
 	Guesser guesser;
-	SOUND sound;
+	GameSound sound;
 	bool restart;
 	Settings() 
 		: language{ Language::UKR }, letters{ Letters::THREE }, 
 		level{ Level::SCHOOL }, guesser{ Guesser::PLAYER },
-		sound{ SOUND::ON }, restart{ false } {}
+		sound{ GameSound::ON }, restart{ false } {}
 };
 
 //----------------------------------------------------------------------------------------------------

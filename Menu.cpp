@@ -45,7 +45,7 @@ Menu::Menu(unsigned int window_width, unsigned int window_height)
 	if (!bgtexture.loadFromFile(fname))
 		throw runtime_error("Menu constructor: cannot open a background file " + fname);
 	background.setTexture(bgtexture);
-	mset.sound = SOUND::ON;
+	mset.sound = GameSound::ON;
 	setSounds();
 	setImages();
 }
@@ -100,7 +100,7 @@ void Menu::set(Settings ms)
 		erudite.setFillColor(sf::Color::Blue);
 		erudite_lvl = true;
 	}
-	soundsprite.setTexture(mset.sound == SOUND::ON ? soundontexture : soundofftexture);
+	soundsprite.setTexture(mset.sound == GameSound::ON ? soundontexture : soundofftexture);
 }
 
 void Menu::changeLangToUKR()
@@ -173,7 +173,7 @@ void Menu::colorChanging(MenuText& mt, bool b)
 			mt.setFillColor(sf::Color::Blue);
 		else
 		{
-			if (!mt.underMouse && mset.sound == SOUND::ON)
+			if (!mt.underMouse && mset.sound == GameSound::ON)
 					hoversound.play();
 			mt.setFillColor(sf::Color::Green);
 		}
@@ -209,7 +209,7 @@ bool Menu::isStartGame()
 
 void Menu::mouseClickHandling()
 {
-	if (mset.sound == SOUND::ON)
+	if (mset.sound == GameSound::ON)
 		clicksound.play();
 	if (ua.getGlobalBounds().contains(pos.x, pos.y))
 	{
@@ -283,9 +283,9 @@ void Menu::mouseClickHandling()
 		clicksound.stop();
 	if (soundsprite.getGlobalBounds().contains(pos.x, pos.y))
 	{
-		mset.sound = mset.sound == SOUND::OFF ? SOUND::ON : SOUND::OFF;
-		soundsprite.setTexture(mset.sound == SOUND::OFF ? soundofftexture : soundontexture);
-		if (mset.sound == SOUND::ON)
+		mset.sound = mset.sound == GameSound::OFF ? GameSound::ON : GameSound::OFF;
+		soundsprite.setTexture(mset.sound == GameSound::OFF ? soundofftexture : soundontexture);
+		if (mset.sound == GameSound::ON)
 			clicksound.play();
 	}
 }
